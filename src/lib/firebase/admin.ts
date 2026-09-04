@@ -12,6 +12,12 @@ if (!getApps().length) {
       } catch (e) {
         serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('ascii'));
       }
+      
+      // Fix literal '\n' that get escaped when loaded from .env variables
+      if (serviceAccount && serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+      
       credential = cert(serviceAccount);
     }
     

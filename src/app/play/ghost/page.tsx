@@ -107,17 +107,17 @@ export default function NumberHuntGame() {
   if (gameOver) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 z-50 relative">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-slate-900 p-12 rounded-[3rem] shadow-[0_0_50px_rgba(255,255,255,0.1)] border-4 border-slate-700 text-center max-w-lg w-full">
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-slate-900 p-8 rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.1)] border-2 border-slate-700 text-center max-w-sm w-full">
           {isWin ? (
-            <Crosshair className="w-24 h-24 text-emerald-500 mx-auto mb-6" />
+            <Crosshair className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
           ) : (
-            <Skull className="w-24 h-24 text-red-500 mx-auto mb-6" />
+            <Skull className="w-16 h-16 text-red-500 mx-auto mb-4" />
           )}
           
-          <h1 className="text-4xl font-black text-white mb-4">{isWin ? "Ghost Buster!" : "Oops! That's an Odd Number!"}</h1>
-          <p className="text-xl text-slate-400 font-bold mb-8">Score: {score}/10</p>
-          <Button onClick={() => window.location.reload()} className="w-full h-16 rounded-full font-black text-xl bg-indigo-500 hover:bg-indigo-600 text-white mb-4">Hunt Again</Button>
-          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-16 rounded-full font-black text-xl border-slate-700 text-slate-300">Back to Arcade</Button>
+          <h1 className="text-3xl font-bold text-white mb-2">{isWin ? "Ghost Buster!" : "Oops! That's an Odd Number!"}</h1>
+          <p className="text-lg text-slate-400 font-bold mb-6">Score: {score}/10</p>
+          <Button onClick={() => window.location.reload()} className="w-full h-12 rounded-full font-bold text-lg bg-indigo-500 hover:bg-indigo-600 text-white mb-3">Hunt Again</Button>
+          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-12 rounded-full font-bold text-lg border-slate-700 text-slate-300">Back to Arcade</Button>
         </motion.div>
       </div>
     );
@@ -133,15 +133,15 @@ export default function NumberHuntGame() {
         }}
       />
 
-      <header className="absolute top-0 w-full flex justify-between items-center p-6 z-20 text-white">
-        <Button variant="ghost" onClick={() => router.push('/adventure')} className="hover:bg-white/10 font-bold">
-          <ArrowLeft className="w-5 h-5 mr-2" /> Exit
+      <header className="absolute top-0 w-full flex justify-between items-center p-4 z-20 text-white">
+        <Button variant="ghost" onClick={() => router.push('/adventure')} className="hover:bg-white/10 font-bold text-sm">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Exit
         </Button>
-        <div className="bg-white/10 px-6 py-2 rounded-full font-black text-xl border border-white/20 backdrop-blur-md">
+        <div className="bg-white/10 px-4 py-1.5 rounded-full font-bold text-lg border border-white/20 backdrop-blur-md">
           Catch ONLY the EVEN numbers!
         </div>
-        <div className="text-2xl font-black flex items-center bg-black/50 px-4 py-2 rounded-xl">
-          <Crosshair className="w-6 h-6 mr-2 text-indigo-400" /> {score}/10
+        <div className="text-xl font-bold flex items-center bg-black/50 px-3 py-1.5 rounded-xl">
+          <Crosshair className="w-5 h-5 mr-2 text-indigo-400" /> {score}/10
         </div>
       </header>
 
@@ -155,13 +155,13 @@ export default function NumberHuntGame() {
               exit={{ opacity: 0, scale: 0 }}
               transition={{ duration: 0.5 }}
               onClick={() => handleCatch(ghost.id, ghost.num)}
-              className="absolute w-24 h-24 hover:scale-110 cursor-crosshair flex flex-col items-center justify-center"
+              className="absolute w-20 h-20 hover:scale-110 cursor-crosshair flex flex-col items-center justify-center"
             >
-              <div className="relative w-20 h-24 bg-white/20 backdrop-blur-sm rounded-t-full rounded-b-xl border-2 border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.2)] flex flex-col items-center pt-4">
-                <span className="text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">{ghost.num}</span>
-                <div className="flex gap-4 mt-2">
-                  <div className="w-3 h-3 bg-black rounded-full shadow-[0_0_10px_white]" />
-                  <div className="w-3 h-3 bg-black rounded-full shadow-[0_0_10px_white]" />
+              <div className="relative w-16 h-20 bg-white/20 backdrop-blur-sm rounded-t-full rounded-b-xl border-2 border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] flex flex-col items-center pt-3">
+                <span className="text-2xl font-bold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">{ghost.num}</span>
+                <div className="flex gap-3 mt-1.5">
+                  <div className="w-2 h-2 bg-black rounded-full shadow-[0_0_5px_white]" />
+                  <div className="w-2 h-2 bg-black rounded-full shadow-[0_0_5px_white]" />
                 </div>
               </div>
             </motion.div>

@@ -21,20 +21,30 @@ export default function AppleCatchGame() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [isWin, setIsWin] = useState(false);
+  const [basketScale, setBasketScale] = useState(1);
+  const [flashSuccess, setFlashSuccess] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const targetScore = 15;
-  const speed = 1.5;
+  const speed = 0.8;
 
   // Input
   useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      
       let clientX;
       if (e instanceof MouseEvent) {
         clientX = e.clientX;
       } else {
         clientX = e.touches[0].clientX;
       }
-      setBasketX((clientX / window.innerWidth) * 100);
+      
+      // Calculate relative to the container
+      const x = clientX - rect.left;
+      const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+      setBasketX(percentage);
     };
     window.addEventListener('mousemove', handleMove, { passive: true });
     window.addEventListener('touchmove', handleMove, { passive: true });
@@ -81,9 +91,31 @@ export default function AppleCatchGame() {
       }
 
       if (hitGood) {
+        setBasketScale(1.3);
+        setFlashSuccess(true);
+        setTimeout(() => {
+          setBasketScale(1);
+          setFlashSuccess(false);
+        }, 150);
         setScore(s => {
           const n = s + 1;
+          // Play pop sound for every apple
           playPop();
+          
+          // Mini confetti at the basket
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            confetti({
+              particleCount: 15,
+              spread: 40,
+              origin: { 
+                x: (rect.left + (basketX / 100) * rect.width) / window.innerWidth, 
+                y: (rect.bottom - 60) / window.innerHeight 
+              },
+              colors: ['#ef4444', '#22c55e']
+            });
+          }
+
           if (n >= targetScore) {
             setGameOver(true);
             setIsWin(true);
@@ -123,61 +155,88 @@ export default function AppleCatchGame() {
   if (gameOver) {
     return (
       <div className="min-h-screen bg-red-950 flex flex-col items-center justify-center p-4">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-red-50 p-12 rounded-[3rem] shadow-2xl border-4 border-red-500 text-center max-w-lg w-full">
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-red-50 p-8 rounded-2xl shadow-xl border-2 border-red-500 text-center max-w-sm w-full">
           {isWin ? (
-             <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-6" />
+             <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
           ) : (
-             <Skull className="w-24 h-24 text-red-500 mx-auto mb-6" />
+             <Skull className="w-16 h-16 text-red-500 mx-auto mb-4" />
           )}
           
-          <h1 className="text-4xl font-black text-red-900 mb-4">{isWin ? "You did it!" : "Yuck! A Worm!"}</h1>
-          <p className="text-xl text-red-700 font-bold mb-8">Caught: {score} / {targetScore} Apples</p>
-          <Button onClick={() => window.location.reload()} className="w-full h-16 rounded-full font-black text-xl bg-red-500 hover:bg-red-600 text-white mb-4">Play Again</Button>
-          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-16 rounded-full font-black text-xl border-red-300 text-red-800">Back to Arcade</Button>
+          <h1 className="text-3xl font-bold text-red-900 mb-2">{isWin ? "You did it!" : "Yuck! A Worm!"}</h1>
+          <p className="text-lg text-red-700 font-bold mb-6">Caught: {score} / {targetScore} Apples</p>
+          <Button onClick={() => window.location.reload()} className="w-full h-12 rounded-full font-bold text-lg bg-red-500 hover:bg-red-600 text-white mb-3">Play Again</Button>
+          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-12 rounded-full font-bold text-lg border-2 border-red-300 text-red-800">Back to Arcade</Button>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-sky-200 flex flex-col overflow-hidden relative cursor-none">
-      <header className="absolute top-0 w-full flex justify-between items-center p-6 z-20">
-        <Button variant="ghost" onClick={() => router.push('/adventure')} className="bg-white/50 hover:bg-white/80 rounded-full font-bold shadow-sm">
-          <ArrowLeft className="w-5 h-5 mr-2" /> Exit
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      <div 
+        ref={containerRef}
+        className="w-full max-w-4xl h-[85vh] bg-sky-200 rounded-3xl shadow-2xl border-4 border-slate-800 overflow-hidden relative flex flex-col cursor-none"
+      >
+        <header className="flex justify-between items-center p-4 relative z-20">
+        <Button variant="ghost" onClick={() => router.push('/adventure')} className="bg-white/50 hover:bg-white/80 rounded-full font-bold shadow-sm text-sm">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Exit
         </Button>
-        <div className="bg-white/80 px-6 py-2 rounded-full font-black text-2xl flex items-center shadow-lg text-red-600">
+        <div className={`px-5 py-1.5 rounded-full font-bold text-xl flex items-center shadow-md transition-all ${flashSuccess ? 'bg-green-100 border-2 border-green-500 text-green-600 scale-110' : 'bg-white/80 border-2 border-transparent text-red-600'}`}>
           🍎 {score} / {targetScore}
         </div>
       </header>
 
+      {/* Floating Clouds Background */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <motion.div 
+          animate={{ x: [0, 1000, 0] }} 
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+          className="absolute top-20 left-10 text-6xl opacity-40 drop-shadow-md"
+        >☁️</motion.div>
+        <motion.div 
+          animate={{ x: [0, -800, 0] }} 
+          transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
+          className="absolute top-40 right-20 text-8xl opacity-30 drop-shadow-md"
+        >☁️</motion.div>
+      </div>
+
       {/* Tree background elements */}
-      <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-green-500 rounded-full opacity-50 blur-3xl" />
-      <div className="absolute top-[-20px] right-[-50px] w-80 h-80 bg-green-400 rounded-full opacity-50 blur-3xl" />
+      <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-green-500 rounded-full opacity-40 blur-3xl" />
+      <div className="absolute top-[-20px] right-[-50px] w-80 h-80 bg-green-400 rounded-full opacity-40 blur-3xl" />
 
       <main className="absolute inset-0 z-10 pointer-events-none">
         {/* Falling Items */}
         {items.map(item => (
-          <div 
+          <motion.div 
             key={item.id}
-            className="absolute text-5xl"
+            animate={{ rotate: item.isGood ? [0, 10, -10, 0] : [0, 360] }}
+            transition={{ duration: item.isGood ? 2 : 4, repeat: Infinity, ease: "linear" }}
+            className="absolute text-5xl drop-shadow-lg"
             style={{ left: `${item.left}%`, top: `${item.top}%`, transform: 'translateX(-50%)' }}
           >
             {item.isGood ? '🍎' : '🐛'}
-          </div>
+          </motion.div>
         ))}
 
         {/* Basket */}
-        <div 
-          className="absolute bottom-10 text-7xl"
-          style={{ left: `${basketX}%`, transform: 'translateX(-50%)' }}
+        <motion.div 
+          animate={{ 
+            scale: basketScale, 
+            x: "-50%",
+            filter: flashSuccess ? 'drop-shadow(0px 0px 20px #22c55e)' : 'drop-shadow(0px 0px 0px rgba(0,0,0,0))'
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 10 }}
+          className="absolute bottom-10 text-7xl origin-bottom"
+          style={{ left: `${basketX}%` }}
         >
           🧺
-        </div>
+        </motion.div>
       </main>
       
       <div className="absolute bottom-2 w-full text-center text-sky-800 font-bold opacity-50 pointer-events-none">
         Move mouse or drag to catch apples
       </div>
     </div>
+  </div>
   );
 }

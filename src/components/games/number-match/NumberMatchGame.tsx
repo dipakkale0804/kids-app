@@ -105,10 +105,10 @@ export function NumberMatchGame({
       
       // Scale down emoji size if there are many of them to prevent overflow
       const emojiSizeClass = count > 10 
-        ? "text-4xl md:text-5xl" 
+        ? "text-3xl md:text-4xl" 
         : count > 6 
-          ? "text-5xl md:text-6xl" 
-          : "text-6xl md:text-7xl";
+          ? "text-4xl md:text-5xl" 
+          : "text-5xl md:text-6xl";
       
       return (
         <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 max-w-sm mx-auto px-4">
@@ -133,16 +133,16 @@ export function NumberMatchGame({
     return (
       <div className="flex flex-col h-full justify-between pb-4 sm:pb-8">
         <div className="flex flex-wrap justify-between items-center mb-6 sm:mb-8 px-2 sm:px-4 gap-2">
-          <div className="bg-primary/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-xl font-bold text-primary font-mono border-2 border-primary/20">
+          <div className="bg-primary/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-base md:text-lg font-bold text-primary font-mono border-2 border-primary/20">
             Level {level + 1} / {LEVEL_COUNT}
           </div>
-          <div className="bg-yellow-100 dark:bg-yellow-900/30 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-xl font-extrabold text-yellow-600 dark:text-yellow-400 border-2 border-yellow-400/30">
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-base md:text-lg font-extrabold text-yellow-600 dark:text-yellow-400 border-2 border-yellow-400/30">
             Score: {score}
           </div>
         </div>
   
         <div className="flex-1 flex flex-col items-center justify-center">
-          <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-8 sm:mb-12 text-foreground text-center drop-shadow-sm px-2">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 sm:mb-10 text-foreground text-center drop-shadow-sm px-2">
             How many do you see?
           </h3>
           
@@ -169,7 +169,7 @@ export function NumberMatchGame({
                   transition={{ delay: i * 0.1, type: "spring" }}
                 >
                   <button
-                    className={`w-full h-20 sm:h-24 md:h-28 text-4xl sm:text-5xl font-black rounded-[1.5rem] md:rounded-[2rem] border-b-4 md:border-b-8 active:border-b-0 active:translate-y-1 md:active:translate-y-2 transition-all bg-gradient-to-b text-white shadow-xl flex items-center justify-center ${buttonColors}`}
+                    className={`w-full h-16 sm:h-20 text-3xl sm:text-4xl font-bold rounded-2xl border-b-4 active:border-b-0 active:translate-y-1 transition-all bg-gradient-to-b text-white shadow-lg flex items-center justify-center ${buttonColors}`}
                     onClick={() => handleOptionClick(opt)}
                     disabled={feedback !== null}
                   >

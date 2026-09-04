@@ -118,17 +118,17 @@ export default function BalloonPopGame() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", bounce: 0.5 }}
-          className="bg-white dark:bg-zinc-900 p-12 rounded-[3rem] shadow-2xl border-4 border-slate-100 text-center max-w-lg w-full"
+          className="bg-white dark:bg-zinc-900 p-8 rounded-2xl shadow-xl border-2 border-slate-100 text-center max-w-sm w-full"
         >
-          <div className="w-24 h-24 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-12 h-12" />
+          <div className="w-16 h-16 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8" />
           </div>
-          <h1 className="text-4xl font-black text-slate-800 dark:text-white mb-4">Level Cleared!</h1>
-          <p className="text-xl text-slate-500 font-bold mb-8">You earned 100 XP!</p>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Level Cleared!</h1>
+          <p className="text-lg text-slate-500 font-bold mb-6">You earned 100 XP!</p>
           <Button 
             size="lg"
             onClick={() => router.push('/adventure')}
-            className="w-full h-16 rounded-full font-black text-xl shadow-lg bg-indigo-500 hover:bg-indigo-600"
+            className="w-full h-12 rounded-full font-bold text-lg shadow-md bg-indigo-500 hover:bg-indigo-600"
           >
             Continue Adventure
           </Button>
@@ -138,31 +138,44 @@ export default function BalloonPopGame() {
   }
 
   return (
-    <div className="min-h-screen bg-sky-100 dark:bg-sky-950 flex flex-col overflow-hidden relative">
-      <header className="flex justify-between items-center p-6 relative z-20">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-4xl h-[85vh] bg-sky-100 dark:bg-sky-950 rounded-3xl shadow-2xl border-4 border-slate-800 overflow-hidden relative flex flex-col">
+        <header className="flex justify-between items-center p-4 relative z-20">
         <Button 
           variant="ghost" 
           onClick={() => router.push('/adventure')}
-          className="rounded-full font-bold bg-white/50 hover:bg-white/80 backdrop-blur-sm"
+          className="rounded-full font-bold bg-white/50 hover:bg-white/80 backdrop-blur-sm text-sm"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" /> Exit Game
+          <ArrowLeft className="w-4 h-4 mr-2" /> Exit Game
         </Button>
         
-        <div className="bg-white px-8 py-3 rounded-full shadow-lg border-4 border-sky-200">
-          <span className="text-slate-500 font-bold mr-2 text-xl">Find:</span>
-          <span className="text-3xl font-black text-sky-500 drop-shadow-sm">{targetLetter}</span>
+        <div className="bg-white px-6 py-2 rounded-full shadow-md border-2 border-sky-200">
+          <span className="text-slate-500 font-bold mr-2 text-lg">Find:</span>
+          <span className="text-2xl font-bold text-sky-500 drop-shadow-sm">{targetLetter}</span>
         </div>
 
-        <div className="bg-white px-6 py-3 rounded-full shadow-lg border-4 border-sky-200 font-black text-xl text-slate-700">
+        <div className="bg-white px-5 py-2 rounded-full shadow-md border-2 border-sky-200 font-bold text-lg text-slate-700">
           Score: {score}/{WIN_SCORE}
         </div>
       </header>
 
       {/* Floating Clouds Background */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-20 left-10 text-6xl opacity-40">☁️</div>
-        <div className="absolute top-40 right-20 text-8xl opacity-30">☁️</div>
-        <div className="absolute bottom-40 left-1/3 text-7xl opacity-50">☁️</div>
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <motion.div 
+          animate={{ x: [0, 1000, 0] }} 
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+          className="absolute top-20 left-10 text-6xl opacity-40 drop-shadow-md"
+        >☁️</motion.div>
+        <motion.div 
+          animate={{ x: [0, -800, 0] }} 
+          transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
+          className="absolute top-40 right-20 text-8xl opacity-30 drop-shadow-md"
+        >☁️</motion.div>
+        <motion.div 
+          animate={{ x: [0, 600, 0] }} 
+          transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-40 left-1/3 text-7xl opacity-50 drop-shadow-md"
+        >☁️</motion.div>
       </div>
 
       {/* Balloon Play Area */}
@@ -171,34 +184,55 @@ export default function BalloonPopGame() {
           {balloons.map((b) => (
             <motion.div
               key={b.id}
-              initial={{ y: '100vh', opacity: 0 }}
-              animate={{ y: '-20vh', opacity: 1 }}
-              exit={{ scale: 0, opacity: 0, transition: { duration: 0.1 } }}
-              transition={{ duration: b.speed, delay: b.delay, ease: "linear" }}
+              initial={{ top: '110%', opacity: 0, x: 0 }}
+              animate={{ 
+                top: '-20%', 
+                opacity: 1,
+                x: [0, 30, -30, 20, -20, 0] // Swaying effect
+              }}
+              exit={{ scale: 1.5, opacity: 0, filter: "blur(10px)", transition: { duration: 0.2 } }}
+              transition={{ 
+                top: { duration: b.speed, delay: b.delay, ease: "linear" },
+                x: { duration: b.speed, delay: b.delay, ease: "easeInOut", repeat: Infinity },
+                opacity: { duration: 0.5, delay: b.delay }
+              }}
               onAnimationComplete={() => {
                 // Auto-remove balloon when it goes off screen to save memory
                 setBalloons(prev => prev.filter(balloon => balloon.id !== b.id));
               }}
-              className="absolute cursor-pointer"
-              style={{ left: `${b.left}%`, bottom: '-150px' }}
-              onClick={() => handlePop(b.id, b.letter)}
-              whileHover={{ scale: 1.1 }}
+              className="absolute cursor-pointer group"
+              style={{ left: `${b.left}%` }}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                confetti({
+                  particleCount: 15,
+                  spread: 40,
+                  origin: { 
+                    x: (rect.left + rect.width / 2) / window.innerWidth, 
+                    y: (rect.top + rect.height / 2) / window.innerHeight 
+                  },
+                  colors: ['#ef4444', '#3b82f6', '#10b981', '#facc15']
+                });
+                handlePop(b.id, b.letter);
+              }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
             >
               {/* Balloon Graphic */}
-              <div className={`relative flex flex-col items-center`}>
-                <div className={`w-24 h-28 rounded-[50%] ${b.color} shadow-inner flex items-center justify-center border-b-4 border-black/10`}>
-                  <div className="absolute top-4 left-4 w-4 h-8 bg-white/30 rounded-full blur-[2px] rotate-12" />
-                  <span className="text-5xl font-black text-white drop-shadow-md select-none">{b.letter}</span>
+              <div className="relative flex flex-col items-center">
+                <div className={`w-16 h-20 md:w-20 md:h-24 rounded-[50%] ${b.color} shadow-lg flex items-center justify-center border-b-2 border-black/10 group-hover:brightness-110 transition-all`}>
+                  <div className="absolute top-2 left-2 md:top-3 md:left-3 w-2 h-4 md:w-3 md:h-6 bg-white/30 rounded-full blur-[2px] rotate-12" />
+                  <span className="text-3xl md:text-4xl font-bold text-white drop-shadow-md select-none">{b.letter}</span>
                 </div>
                 {/* Balloon Knot & String */}
-                <div className={`w-4 h-4 ${b.color} rounded-sm rotate-45 -mt-2 border-b-2 border-black/10`} />
-                <div className="w-0.5 h-16 bg-white/50 -mt-1" />
+                <div className={`w-2 h-2 md:w-3 md:h-3 ${b.color} rounded-sm rotate-45 -mt-1 md:-mt-1.5 border-b border-black/10`} />
+                <div className="w-0.5 h-8 md:h-12 bg-white/50 -mt-1" />
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
       </main>
+      </div>
     </div>
   );
 }

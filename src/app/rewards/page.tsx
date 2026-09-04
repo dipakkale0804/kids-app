@@ -38,15 +38,15 @@ export default function RewardsPage() {
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-8 flex flex-col gap-8">
         
         {/* Top Profile Summary */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border-4 border-primary/20 shadow-xl flex flex-col md:flex-row items-center gap-8 text-center md:text-left relative overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border-2 border-primary/20 shadow-lg flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/4" />
           
-          <div className="w-32 h-32 bg-primary/20 rounded-full flex items-center justify-center text-7xl shadow-inner border-4 border-primary/30 shrink-0 relative z-10">
+          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center text-6xl shadow-inner border-2 border-primary/30 shrink-0 relative z-10">
             {user.avatar}
           </div>
           
           <div className="flex-1 relative z-10 w-full">
-            <h1 className="text-4xl font-extrabold text-foreground mb-2">{user.displayName}</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{user.displayName}</h1>
             <div className="flex flex-wrap justify-center md:justify-start gap-3 mb-6">
               <span className="bg-primary text-primary-foreground font-bold px-4 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
                 Level {user.level}
@@ -70,12 +70,12 @@ export default function RewardsPage() {
         </div>
 
         {/* Two Column Layout for Challenges and Badges */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Daily Challenges */}
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border-4 border-blue-500/20 shadow-lg">
-            <h2 className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 mb-6 flex items-center gap-2">
-              <Target className="w-7 h-7" /> Daily Challenges
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 md:p-6 border-2 border-blue-500/20 shadow-md">
+            <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-4 flex items-center gap-2">
+              <Target className="w-6 h-6" /> Daily Challenges
             </h2>
             
             <div className="flex flex-col gap-4">
@@ -112,9 +112,9 @@ export default function RewardsPage() {
           </div>
 
           {/* Badges */}
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border-4 border-purple-500/20 shadow-lg">
-            <h2 className="text-2xl font-extrabold text-purple-600 dark:text-purple-400 mb-6 flex items-center gap-2">
-              <Trophy className="w-7 h-7" /> Badges
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 md:p-6 border-2 border-purple-500/20 shadow-md">
+            <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400 mb-4 flex items-center gap-2">
+              <Trophy className="w-6 h-6" /> Badges
             </h2>
             
             {user.badges.length === 0 ? (

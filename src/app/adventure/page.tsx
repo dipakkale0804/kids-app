@@ -10,14 +10,14 @@ import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 import { useRouter } from "next/navigation";
 
 const ARCADE_GAMES = [
-  { id: "whack", name: "Whack-a-Vowel", desc: "Whack the correct letters!", icon: <Target className="w-10 h-10" />, color: "bg-amber-500", isPremium: false, ready: true },
-  { id: "balloon", name: "Alphabet Pop", desc: "Pop the target letter!", icon: <Zap className="w-10 h-10" />, color: "bg-cyan-500", isPremium: false, ready: true },
-  { id: "fishing", name: "Math Fishing", desc: "Catch the right numbers", icon: <Fish className="w-10 h-10" />, color: "bg-blue-500", isPremium: false, ready: true },
-  { id: "simon", name: "Memory Master", desc: "Remember the pattern", icon: <Music className="w-10 h-10" />, color: "bg-fuchsia-500", isPremium: true, ready: true },
-  { id: "paint", name: "Color Splash", desc: "Mix primary colors", icon: <Palette className="w-10 h-10" />, color: "bg-pink-500", isPremium: true, ready: true },
-  { id: "ghost", name: "Number Hunt", desc: "Catch even/odd ghosts", icon: <Ghost className="w-10 h-10" />, color: "bg-slate-800", isPremium: true, ready: true },
-  { id: "pattern", name: "Pattern Puzzle", desc: "Finish the sequence", icon: <Gamepad2 className="w-10 h-10" />, color: "bg-emerald-500", isPremium: true, ready: true },
-  { id: "counting", name: "Apple Catch", desc: "Count falling apples", icon: <Car className="w-10 h-10" />, color: "bg-red-500", isPremium: true, ready: true },
+  { id: "whack", name: "Whack-a-Vowel", desc: "Whack the correct letters!", icon: <Target className="w-6 h-6" />, color: "bg-amber-500", isPremium: false, ready: true },
+  { id: "balloon", name: "Alphabet Pop", desc: "Pop the target letter!", icon: <Zap className="w-6 h-6" />, color: "bg-cyan-500", isPremium: false, ready: true },
+  { id: "fishing", name: "Math Fishing", desc: "Catch the right numbers", icon: <Fish className="w-6 h-6" />, color: "bg-blue-500", isPremium: false, ready: true },
+  { id: "simon", name: "Memory Master", desc: "Remember the pattern", icon: <Music className="w-6 h-6" />, color: "bg-fuchsia-500", isPremium: true, ready: true },
+  { id: "paint", name: "Color Splash", desc: "Mix primary colors", icon: <Palette className="w-6 h-6" />, color: "bg-pink-500", isPremium: true, ready: true },
+  { id: "ghost", name: "Number Hunt", desc: "Catch even/odd ghosts", icon: <Ghost className="w-6 h-6" />, color: "bg-slate-800", isPremium: true, ready: true },
+  { id: "pattern", name: "Pattern Puzzle", desc: "Finish the sequence", icon: <Gamepad2 className="w-6 h-6" />, color: "bg-emerald-500", isPremium: true, ready: true },
+  { id: "counting", name: "Apple Catch", desc: "Count falling apples", icon: <Car className="w-6 h-6" />, color: "bg-red-500", isPremium: true, ready: true },
 ];
 
 export default function ArcadeZone() {
@@ -51,16 +51,16 @@ export default function ArcadeZone() {
         <div className="absolute bottom-20 left-20 w-96 h-96 bg-cyan-600 rounded-full mix-blend-screen filter blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <header className="flex justify-between items-center w-full max-w-6xl mx-auto mb-12 mt-4 relative z-10">
+      <header className="flex justify-between items-center w-full max-w-6xl mx-auto mb-8 mt-2 relative z-10">
         <Link href="/">
-          <Button variant="ghost" className="rounded-full font-bold h-12 px-6 bg-slate-800 text-white border-2 border-slate-700 shadow-sm hover:bg-slate-700">
-            <ArrowLeft className="w-5 h-5 mr-2" /> Back Home
+          <Button variant="ghost" className="rounded-full font-bold h-10 px-4 bg-slate-800 text-white border-2 border-slate-700 shadow-sm hover:bg-slate-700">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back Home
           </Button>
         </Link>
-        <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-yellow-400 drop-shadow-lg uppercase italic tracking-wider">
+        <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-yellow-400 drop-shadow-md tracking-wide">
           Action Arcade
         </h1>
-        <div className="w-[140px]" /> {/* Spacer */}
+        <div className="w-[120px]" /> {/* Spacer */}
       </header>
 
       <main className="flex-1 w-full max-w-6xl mx-auto relative z-10">
@@ -71,27 +71,27 @@ export default function ArcadeZone() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05, type: "spring", bounce: 0.5 }}
-              whileHover={{ y: -10, scale: 1.05 }}
+              whileHover={{ y: -5, scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleGameClick(game)}
-              className={`cursor-pointer rounded-[2rem] p-6 shadow-2xl flex flex-col items-center text-center relative overflow-hidden group ${game.color}`}
+              className={`cursor-pointer rounded-2xl p-4 shadow-md flex flex-col items-center text-center relative overflow-hidden group ${game.color}`}
             >
               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
               
               {/* Premium Lock Overlay */}
               {game.isPremium && !isPremium && (
-                <div className="absolute top-4 right-4 bg-slate-900/80 p-2 rounded-full backdrop-blur-sm z-20">
-                  <Lock className="w-4 h-4 text-amber-400" />
+                <div className="absolute top-3 right-3 bg-slate-900/80 p-1.5 rounded-full backdrop-blur-sm z-20">
+                  <Lock className="w-3 h-3 text-amber-400" />
                 </div>
               )}
 
               {/* Icon Container */}
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mb-4 text-white shadow-inner relative z-10 group-hover:scale-110 transition-transform duration-300">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-2 text-white shadow-inner relative z-10 group-hover:scale-110 transition-transform duration-300">
                 {game.icon}
               </div>
               
-              <h3 className="text-2xl font-black text-white mb-2 drop-shadow-md relative z-10">{game.name}</h3>
-              <p className="font-bold text-white/80 relative z-10">{game.desc}</p>
+              <h3 className="text-lg font-bold text-white mb-1 drop-shadow-md relative z-10">{game.name}</h3>
+              <p className="font-medium text-white/90 text-xs relative z-10">{game.desc}</p>
               
               {!game.ready && (
                 <div className="absolute bottom-0 left-0 w-full bg-black/50 text-white/70 text-xs py-1 font-bold uppercase tracking-widest backdrop-blur-sm">

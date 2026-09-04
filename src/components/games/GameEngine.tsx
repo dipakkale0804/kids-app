@@ -102,10 +102,10 @@ export function GameEngine({ metadata, children }: GameEngineProps) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto min-h-[80svh] sm:min-h-[600px] flex flex-col bg-white dark:bg-zinc-900 rounded-3xl shadow-xl overflow-hidden border-4 border-primary/20 relative">
+    <div className="w-full max-w-4xl mx-auto min-h-[80svh] sm:min-h-[500px] flex flex-col bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden border-2 border-primary/20 relative">
       {/* Game Header */}
-      <div className="bg-primary/10 p-4 flex justify-between items-center border-b-4 border-primary/20">
-        <h2 className="text-2xl font-extrabold text-primary flex items-center gap-2">
+      <div className="bg-primary/10 p-4 flex justify-between items-center border-b-2 border-primary/20">
+        <h2 className="text-xl font-bold text-primary flex items-center gap-2">
           {metadata.title}
         </h2>
         <div className="flex gap-2">
@@ -125,26 +125,26 @@ export function GameEngine({ metadata, children }: GameEngineProps) {
               exit={{ opacity: 0, scale: 1.1 }}
               className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-transparent to-primary/5"
             >
-              <div className={`w-32 h-32 md:w-40 md:h-40 rounded-3xl md:rounded-[2.5rem] flex items-center justify-center mb-6 md:mb-8 shadow-2xl bg-gradient-to-br ${metadata.color || "from-primary/20 to-primary/40"} border-4 border-white/20 relative overflow-hidden`}>
+              <div className={`w-24 h-24 md:w-32 md:h-32 rounded-2xl flex items-center justify-center mb-6 md:mb-8 shadow-xl bg-gradient-to-br ${metadata.color || "from-primary/20 to-primary/40"} border-2 border-white/20 relative overflow-hidden`}>
                 <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
                 <motion.span 
                   animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.1, 1] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="text-6xl md:text-8xl drop-shadow-xl z-10"
+                  className="text-5xl md:text-6xl drop-shadow-lg z-10"
                 >
                   {metadata.icon || "🎮"}
                 </motion.span>
               </div>
-              <h3 className="text-3xl md:text-4xl font-extrabold mb-2 md:mb-4 text-foreground">{metadata.title}</h3>
-              <p className="text-xl text-muted-foreground max-w-md mb-8 font-mono">
+              <h3 className="text-2xl md:text-3xl font-bold mb-2 md:mb-4 text-foreground">{metadata.title}</h3>
+              <p className="text-lg text-muted-foreground max-w-md mb-8 font-mono">
                 {metadata.description}
               </p>
               <Button 
                 size="lg" 
                 onClick={handleStart}
-                className="text-2xl py-8 px-12 rounded-full font-extrabold shadow-xl shadow-primary/30"
+                className="text-xl py-6 px-10 rounded-full font-bold shadow-lg shadow-primary/30"
               >
-                Play Now! <ArrowRight className="ml-2 w-8 h-8" />
+                Play Now! <ArrowRight className="ml-2 w-6 h-6" />
               </Button>
             </motion.div>
           )}
@@ -168,18 +168,18 @@ export function GameEngine({ metadata, children }: GameEngineProps) {
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-transparent to-success/10"
             >
-              <Trophy className="w-32 h-32 text-yellow-500 mb-6 drop-shadow-xl" />
-              <h3 className="text-5xl font-extrabold text-success mb-4">Awesome Job!</h3>
+              <Trophy className="w-24 h-24 text-yellow-500 mb-6 drop-shadow-lg" />
+              <h3 className="text-4xl font-bold text-success mb-4">Awesome Job!</h3>
               
-              <div className="flex gap-6 mb-10">
-                <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-lg border-2 border-primary/20 min-w-[150px]">
-                  <p className="text-sm text-muted-foreground font-bold mb-2 uppercase tracking-wider">Score</p>
-                  <p className="text-4xl font-extrabold text-foreground">{session.score}</p>
+              <div className="flex gap-4 mb-8">
+                <div className="bg-white dark:bg-zinc-800 p-5 rounded-2xl shadow-md border border-primary/20 min-w-[120px]">
+                  <p className="text-xs text-muted-foreground font-bold mb-2 uppercase tracking-wider">Score</p>
+                  <p className="text-3xl font-bold text-foreground">{session.score}</p>
                 </div>
-                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-6 rounded-2xl shadow-lg border-2 border-yellow-400/50 min-w-[150px]">
-                  <p className="text-sm text-yellow-700 dark:text-yellow-500 font-bold mb-2 uppercase tracking-wider">XP Earned</p>
-                  <p className="text-4xl font-extrabold text-yellow-600 dark:text-yellow-400 flex items-center justify-center gap-2">
-                    +{session.xpEarned} <Star className="w-6 h-6 fill-yellow-500" />
+                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-5 rounded-2xl shadow-md border border-yellow-400/50 min-w-[120px]">
+                  <p className="text-xs text-yellow-700 dark:text-yellow-500 font-bold mb-2 uppercase tracking-wider">XP Earned</p>
+                  <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 flex items-center justify-center gap-2">
+                    +{session.xpEarned} <Star className="w-5 h-5 fill-yellow-500" />
                   </p>
                 </div>
               </div>

@@ -27,6 +27,8 @@ export default function SimonSaysGame() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [flashError, setFlashError] = useState(false);
+  const [flashSuccess, setFlashSuccess] = useState(false);
 
   const startGame = () => {
     setSequence([Math.floor(Math.random() * 4)]);
@@ -70,7 +72,10 @@ export default function SimonSaysGame() {
         // Round passed
         setScore(sequence.length);
         setPlayerStep(0);
+        setFlashSuccess(true);
+        playLevelUp();
         setTimeout(() => {
+          setFlashSuccess(false);
           setSequence(prev => [...prev, Math.floor(Math.random() * 4)]);
         }, 1000);
       } else {
@@ -79,33 +84,40 @@ export default function SimonSaysGame() {
     } else {
       // Failed
       playIncorrect();
-      setGameOver(true);
+      setFlashError(true);
+      setTimeout(() => setGameOver(true), 500); // Small delay to show error flash
       logActivity({ topic: "Simon Says", durationMinutes: 2, score: score * 10 });
       addXp(score * 5);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative">
-      <header className="absolute top-0 w-full flex justify-between items-center p-6 text-white">
-        <Button variant="ghost" onClick={() => router.push('/adventure')} className="rounded-full font-bold hover:bg-white/10">
-          <ArrowLeft className="w-5 h-5 mr-2" /> Exit
+    <motion.div 
+      animate={{ 
+        backgroundColor: flashError ? '#ef4444' : flashSuccess ? '#10b981' : '#020617' 
+      }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+    >
+      <header className="absolute top-0 w-full flex justify-between items-center p-4 text-white z-20">
+        <Button variant="ghost" onClick={() => router.push('/adventure')} className="rounded-full font-bold hover:bg-white/10 text-sm">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Exit
         </Button>
-        <div className="text-2xl font-black bg-white/10 px-6 py-2 rounded-full">
+        <div className="text-xl font-bold bg-white/10 px-5 py-2 rounded-full">
           Level: {score}
         </div>
       </header>
 
       {gameOver ? (
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-slate-900 p-12 rounded-[3rem] shadow-2xl border-4 border-slate-800 text-center z-10 max-w-sm w-full">
-          <h1 className="text-4xl font-black text-white mb-2">Game Over!</h1>
-          <p className="text-slate-400 font-bold mb-8">You reached Level {score}</p>
-          <Button onClick={startGame} className="w-full h-16 rounded-full font-black text-xl bg-indigo-500 hover:bg-indigo-600 mb-4">Try Again</Button>
-          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-16 rounded-full font-black text-xl text-slate-300 border-slate-700">Back to Arcade</Button>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-slate-900 p-8 rounded-2xl shadow-xl border-2 border-slate-800 text-center z-10 max-w-sm w-full">
+          <h1 className="text-3xl font-bold text-white mb-2">Game Over!</h1>
+          <p className="text-slate-400 font-bold mb-6">You reached Level {score}</p>
+          <Button onClick={startGame} className="w-full h-12 rounded-full font-bold text-lg bg-indigo-500 hover:bg-indigo-600 mb-3">Try Again</Button>
+          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-12 rounded-full font-bold text-lg text-slate-300 border-slate-700">Back to Arcade</Button>
         </motion.div>
       ) : (
         <div className="relative">
-          <div className="w-[300px] h-[300px] md:w-[400px] md:h-[400px] bg-slate-900 rounded-full border-8 border-slate-800 shadow-2xl overflow-hidden grid grid-cols-2 grid-rows-2 gap-2 p-2">
+          <div className="w-[260px] h-[260px] md:w-[340px] md:h-[340px] bg-slate-900 rounded-full border-4 border-slate-800 shadow-2xl overflow-hidden grid grid-cols-2 grid-rows-2 gap-1.5 p-1.5">
             {COLORS.map(c => (
               <motion.div
                 key={c.id}
@@ -119,19 +131,19 @@ export default function SimonSaysGame() {
             ))}
           </div>
           
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-slate-950 rounded-full border-8 border-slate-800 flex items-center justify-center">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-slate-950 rounded-full border-4 border-slate-800 flex items-center justify-center">
             {!gameStarted ? (
-              <Button onClick={startGame} size="icon" className="w-16 h-16 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white">
-                <Play className="w-8 h-8 ml-1" />
+              <Button onClick={startGame} size="icon" className="w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white">
+                <Play className="w-6 h-6 ml-1" />
               </Button>
             ) : (
-              <span className="text-2xl font-black text-slate-500 uppercase tracking-widest">
+              <span className="text-xl font-bold text-slate-500 uppercase tracking-widest">
                 {isPlayingSeq ? 'Watch' : 'Play'}
               </span>
             )}
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

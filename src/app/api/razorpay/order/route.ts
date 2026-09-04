@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.split("Bearer ")[1];
-    
+
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     } catch (e) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
+
     // Parse the requested plan
     let body;
     try {
@@ -37,12 +37,12 @@ export async function POST(req: Request) {
     });
 
     // Set amount based on plan
-    const amount = plan === "monthly" ? 199 : 999;
+    const amount = plan === "monthly" ? 1 : 2;
 
     const options = {
       amount: amount * 100, // in paise
       currency: "INR",
-      receipt: `receipt_${user.id.substring(0, 8)}_${Date.now()}`,
+      receipt: `receipt_${decodedToken.uid.substring(0, 8)}_${Date.now()}`,
     };
 
     const order = await instance.orders.create(options);

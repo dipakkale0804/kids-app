@@ -85,17 +85,17 @@ export default function WhackAVowelGame() {
   if (gameOver) {
     return (
       <div className="min-h-screen bg-orange-950 flex flex-col items-center justify-center p-4">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-orange-100 p-12 rounded-[3rem] shadow-2xl border-4 border-orange-500 text-center max-w-lg w-full">
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-orange-100 p-8 rounded-2xl shadow-xl border-2 border-orange-500 text-center max-w-sm w-full">
           {isWin ? (
-             <Target className="w-24 h-24 text-orange-500 mx-auto mb-6" />
+             <Target className="w-16 h-16 text-orange-500 mx-auto mb-4" />
           ) : (
-             <Skull className="w-24 h-24 text-red-500 mx-auto mb-6" />
+             <Skull className="w-16 h-16 text-red-500 mx-auto mb-4" />
           )}
           
-          <h1 className="text-4xl font-black text-orange-900 mb-4">{isWin ? "Time's Up!" : "Oops! That's a Consonant!"}</h1>
-          <p className="text-xl text-orange-700 font-bold mb-8">Score: {score}</p>
-          <Button onClick={() => window.location.reload()} className="w-full h-16 rounded-full font-black text-xl bg-orange-500 hover:bg-orange-600 mb-4">Play Again</Button>
-          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-16 rounded-full font-black text-xl border-orange-300 text-orange-800">Back to Arcade</Button>
+          <h1 className="text-3xl font-bold text-orange-900 mb-2">{isWin ? "Time's Up!" : "Oops! That's a Consonant!"}</h1>
+          <p className="text-lg text-orange-700 font-bold mb-6">Score: {score}</p>
+          <Button onClick={() => window.location.reload()} className="w-full h-12 rounded-full font-bold text-lg bg-orange-500 hover:bg-orange-600 mb-3">Play Again</Button>
+          <Button variant="outline" onClick={() => router.push('/adventure')} className="w-full h-12 rounded-full font-bold text-lg border-2 border-orange-300 text-orange-800">Back to Arcade</Button>
         </motion.div>
       </div>
     );
@@ -103,25 +103,25 @@ export default function WhackAVowelGame() {
 
   return (
     <div className="min-h-screen bg-amber-700 flex flex-col relative cursor-crosshair">
-      <header className="flex justify-between items-center p-6 bg-amber-800 text-white shadow-lg z-10">
-        <Button variant="ghost" onClick={() => router.push('/adventure')} className="hover:bg-amber-700 font-bold">
-          <ArrowLeft className="w-5 h-5 mr-2" /> Exit
+      <header className="flex justify-between items-center p-4 bg-amber-800 text-white shadow-md z-10">
+        <Button variant="ghost" onClick={() => router.push('/adventure')} className="hover:bg-amber-700 font-bold text-sm">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Exit
         </Button>
-        <div className="bg-amber-900 px-6 py-2 rounded-full font-black text-xl border-2 border-amber-600">
+        <div className="bg-amber-900 px-4 py-1.5 rounded-full font-bold text-lg border-2 border-amber-600">
           Whack the Vowels: A, E, I, O, U
         </div>
-        <div className="flex gap-6 text-xl font-black">
+        <div className="flex gap-4 text-lg font-bold">
           <div>⏳ {timeLeft}s</div>
           <div>🎯 {score}</div>
         </div>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4 perspective-1000">
-        <div className="grid grid-cols-3 gap-4 md:gap-8 bg-amber-900 p-8 rounded-[3rem] shadow-2xl border-b-[20px] border-amber-950 transform rotate-x-12">
+        <div className="grid grid-cols-3 gap-3 md:gap-6 bg-amber-900 p-6 rounded-3xl shadow-xl border-b-8 border-amber-950 transform rotate-x-12">
           {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => {
             const mole = activeMoles.find(m => m.hole === i);
             return (
-              <div key={i} className="w-24 h-24 md:w-32 md:h-32 bg-amber-950 rounded-[40%] relative shadow-inner overflow-hidden border-4 border-amber-900/50 flex items-end justify-center">
+              <div key={i} className="w-20 h-20 md:w-28 md:h-28 bg-amber-950 rounded-[40%] relative shadow-inner overflow-hidden border-2 border-amber-900/50 flex items-end justify-center">
                 {/* Hole Shadow */}
                 <div className="absolute inset-2 bg-black/60 rounded-full" />
                 
@@ -133,12 +133,12 @@ export default function WhackAVowelGame() {
                       exit={{ y: "100%" }}
                       transition={{ type: "spring", bounce: 0.5 }}
                       onClick={() => handleWhack(mole)}
-                      className={`relative z-10 w-20 h-24 md:w-28 md:h-32 rounded-t-full flex flex-col items-center pt-4 border-b-0 border-4 shadow-[0_-5px_15px_rgba(0,0,0,0.5)] ${mole.isVowel ? 'bg-emerald-500 border-emerald-700' : 'bg-red-500 border-red-700'}`}
+                      className={`relative z-10 w-16 h-20 md:w-20 md:h-24 rounded-t-full flex flex-col items-center pt-3 border-b-0 border-2 shadow-[0_-3px_10px_rgba(0,0,0,0.5)] ${mole.isVowel ? 'bg-emerald-500 border-emerald-700' : 'bg-red-500 border-red-700'}`}
                     >
-                      <span className="text-4xl md:text-5xl font-black text-white drop-shadow-md">{mole.letter}</span>
+                      <span className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">{mole.letter}</span>
                       <div className="flex gap-2 mt-2">
-                        <div className="w-2 h-2 bg-black rounded-full" />
-                        <div className="w-2 h-2 bg-black rounded-full" />
+                        <div className="w-1.5 h-1.5 bg-black rounded-full" />
+                        <div className="w-1.5 h-1.5 bg-black rounded-full" />
                       </div>
                     </motion.button>
                   )}

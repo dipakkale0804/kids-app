@@ -44,6 +44,7 @@ interface UserState {
   fetchFromDb: () => Promise<void>;
   logActivity: (activity: Omit<ActivityLog, "id" | "timestamp">) => void;
   clearOldGames: () => void; // New utility to remove deprecated games
+  resetUser: () => void; // Clear state on logout
 }
 
 const XP_PER_LEVEL = 1000;
@@ -73,7 +74,8 @@ export const useUserStore = create<UserState>()(
               level: state.level,
               stars: state.stars,
               coins: state.coins,
-              activityLogs: state.activityLogs
+              activityLogs: state.activityLogs,
+              is_premium: state.isPremium
             }, { merge: true });
           } catch (e) {
             console.error("Failed to sync to Firebase", e);
@@ -101,7 +103,8 @@ export const useUserStore = create<UserState>()(
                 level: data.level || get().level,
                 stars: data.stars || get().stars,
                 coins: data.coins || get().coins,
-                activityLogs: logs
+                activityLogs: logs,
+                isPremium: data.is_premium === true || data.isPremium === true
               });
             }
           } catch (e) {
@@ -194,6 +197,22 @@ export const useUserStore = create<UserState>()(
           activityLogs: []
         });
         get().syncToDb();
+      },
+
+      resetUser: () => {
+        set({
+          displayName: "Player 1",
+          avatar: "🦊",
+          xp: 0,
+          level: 1,
+          stars: 0,
+          coins: 0,
+          streak: 0,
+          lastActive: null,
+          badges: [],
+          isPremium: false,
+          activityLogs: []
+        });
       }
     }),
     {

@@ -1,20 +1,32 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Music, Play, Disc3, Mic2, Lock } from "lucide-react";
+import { ArrowLeft, Music, Play, Disc3, Mic2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useUserStore } from "@/store/useUserStore";
+import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 
 const SONGS = [
   { id: "piano", title: "Magic Piano", type: "Instrument", icon: "🎹", premium: false, color: "bg-purple-100 border-purple-300 text-purple-900", route: "/music/piano" },
-  { id: "drums", title: "Drum Kit", type: "Instrument", icon: "🥁", premium: false, color: "bg-rose-100 border-rose-300 text-rose-900", route: "/music/drums" },
-  { id: "old-macdonald", title: "Old MacDonald", type: "Sing Along", icon: "🚜", premium: true, color: "bg-orange-100 border-orange-300 text-orange-900", route: "#" },
-  { id: "alphabet", title: "Alphabet Song", type: "Sing Along", icon: "🔤", premium: true, color: "bg-blue-100 border-blue-300 text-blue-900", route: "#" },
+  { id: "drums", title: "Drum Kit", type: "Instrument", icon: "🥁", premium: true, color: "bg-rose-100 border-rose-300 text-rose-900", route: "/music/drums" },
+  { id: "old-macdonald", title: "Old MacDonald", type: "Sing Along", icon: "🚜", premium: true, color: "bg-orange-100 border-orange-300 text-orange-900", route: "/music/old-macdonald" },
+  { id: "alphabet", title: "Alphabet Song", type: "Sing Along", icon: "🔤", premium: true, color: "bg-blue-100 border-blue-300 text-blue-900", route: "/music/alphabet" },
 ];
 
 export default function MusicPage() {
   const router = useRouter();
+  const { isPremium } = useUserStore();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const handleSongClick = (song: typeof SONGS[0]) => {
+    if (song.premium && !isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    router.push(song.route);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -37,22 +49,22 @@ export default function MusicPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {SONGS.map((song) => (
-            <Link key={song.id} href={song.route} className={song.premium ? "pointer-events-none opacity-80" : ""}>
+            <div key={song.id} onClick={() => handleSongClick(song)}>
               <motion.div
-                whileHover={{ y: -10, scale: 1.02 }}
-                className={`relative flex flex-col items-center p-8 rounded-3xl border-4 shadow-xl ${song.color} cursor-pointer group h-full`}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className={`relative flex flex-col items-center p-6 rounded-2xl border-2 shadow-lg ${song.color} cursor-pointer group h-full`}
               >
                 {song.premium && (
-                  <div className="absolute -top-4 -right-4 bg-yellow-400 text-yellow-900 p-3 rounded-full shadow-lg border-2 border-yellow-200">
-                    <Lock className="w-5 h-5" />
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-md border-2 border-white/50 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-white" /> PREMIUM
                   </div>
                 )}
                 
-                <div className="text-8xl mb-6 drop-shadow-md group-hover:rotate-12 transition-transform">
+                <div className="text-6xl mb-4 drop-shadow-md group-hover:rotate-12 transition-transform">
                   {song.icon}
                 </div>
                 
-                <h3 className="text-2xl font-black mb-2 text-center leading-tight">{song.title}</h3>
+                <h3 className="text-xl font-bold mb-2 text-center leading-tight">{song.title}</h3>
                 
                 <div className="flex items-center gap-2 text-sm font-bold opacity-80 mb-6">
                   {song.type === "Sing Along" ? <Mic2 className="w-4 h-4" /> : <Disc3 className="w-4 h-4" />}
@@ -60,13 +72,19 @@ export default function MusicPage() {
                 </div>
                 
                 <Button className="w-full rounded-full font-bold text-lg h-12 bg-white/50 hover:bg-white/80 border-2 border-current text-inherit mt-auto shadow-sm pointer-events-none">
-                  <Play className="w-5 h-5 mr-2" /> {song.premium ? "Locked" : "Play Now"}
+                  <Play className="w-5 h-5 mr-2" /> Play Now
                 </Button>
               </motion.div>
-            </Link>
+            </div>
           ))}
         </div>
       </main>
+
+      <AnimatePresence>
+        {showPremiumModal && (
+          <PremiumLockModal onClose={() => setShowPremiumModal(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

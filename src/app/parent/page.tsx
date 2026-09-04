@@ -232,7 +232,7 @@ export default function ParentDashboard() {
           
           <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-10">
             <div>
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+              <h1 className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
                 {displayName}'s Progress
               </h1>
               <p className="text-slate-500 font-bold flex items-center gap-2 text-lg">
@@ -298,10 +298,10 @@ export default function ParentDashboard() {
                 {/* Learning Time Chart */}
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                  className="bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-zinc-800 shadow-sm flex flex-col h-[400px]"
+                  className="bg-white dark:bg-zinc-900 p-5 md:p-6 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-sm flex flex-col h-[350px]"
                 >
-                  <h3 className="text-xl font-black mb-6 text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl"><Activity className="w-5 h-5 text-indigo-600" /></div>
+                  <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg"><Activity className="w-4 h-4 text-indigo-600" /></div>
                     Activity (Min)
                   </h3>
                   <div className="flex-1 w-full -ml-4">
@@ -320,10 +320,10 @@ export default function ParentDashboard() {
                 {/* Accuracy Radar/Bar */}
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  className="bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-zinc-800 shadow-sm flex flex-col h-[400px]"
+                  className="bg-white dark:bg-zinc-900 p-5 md:p-6 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-sm flex flex-col h-[350px]"
                 >
-                  <h3 className="text-xl font-black mb-6 text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                    <div className="p-2 bg-fuchsia-100 dark:bg-fuchsia-900/30 rounded-xl"><BrainCircuit className="w-5 h-5 text-fuchsia-600" /></div>
+                  <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <div className="p-1.5 bg-fuchsia-100 dark:bg-fuchsia-900/30 rounded-lg"><BrainCircuit className="w-4 h-4 text-fuchsia-600" /></div>
                     Topic Accuracy
                   </h3>
                   <div className="flex-1 flex flex-col justify-center gap-6 overflow-y-auto hide-scrollbar">
@@ -348,24 +348,24 @@ export default function ParentDashboard() {
               {/* Insights */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="grid grid-cols-1 xl:grid-cols-2 gap-8"
+                className="grid grid-cols-1 xl:grid-cols-2 gap-6"
               >
-                <div className="bg-emerald-50 dark:bg-emerald-900/10 p-8 rounded-[2.5rem] border-2 border-emerald-200 dark:border-emerald-900/30 relative overflow-hidden">
-                  <div className="absolute -right-6 -top-6 text-emerald-500/10"><Star className="w-40 h-40 fill-current" /></div>
-                  <h4 className="text-emerald-900 dark:text-emerald-400 font-black text-2xl mb-3 flex items-center gap-3 relative z-10">
+                <div className="bg-emerald-50 dark:bg-emerald-900/10 p-6 rounded-2xl border border-emerald-200 dark:border-emerald-900/30 relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 text-emerald-500/10"><Star className="w-32 h-32 fill-current" /></div>
+                  <h4 className="text-emerald-900 dark:text-emerald-400 font-bold text-xl mb-2 flex items-center gap-2 relative z-10">
                     Strengths
                   </h4>
-                  <p className="text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed text-lg relative z-10">
+                  <p className="text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed text-base relative z-10">
                     {displayName} is excelling in <strong className="font-black text-emerald-950 dark:text-emerald-100">{strengths}</strong>! Their accuracy has been consistently high in this subject. Keep it up!
                   </p>
                 </div>
                 
-                <div className="bg-amber-50 dark:bg-amber-900/10 p-8 rounded-[2.5rem] border-2 border-amber-200 dark:border-amber-900/30 relative overflow-hidden">
-                  <div className="absolute -right-6 -top-6 text-amber-500/10"><AlertTriangle className="w-40 h-40 fill-current" /></div>
-                  <h4 className="text-amber-900 dark:text-amber-400 font-black text-2xl mb-3 flex items-center gap-3 relative z-10">
+                <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-2xl border border-amber-200 dark:border-amber-900/30 relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 text-amber-500/10"><AlertTriangle className="w-32 h-32 fill-current" /></div>
+                  <h4 className="text-amber-900 dark:text-amber-400 font-bold text-xl mb-2 flex items-center gap-2 relative z-10">
                     Focus Areas
                   </h4>
-                  <p className="text-amber-800 dark:text-amber-300 font-medium leading-relaxed text-lg relative z-10">
+                  <p className="text-amber-800 dark:text-amber-300 font-medium leading-relaxed text-base relative z-10">
                     We recommend spending a bit more time on <strong className="font-black text-amber-950 dark:text-amber-100">{focuses}</strong>. Try selecting this module more frequently to build confidence.
                   </p>
                 </div>
@@ -377,13 +377,13 @@ export default function ParentDashboard() {
           {activeTab === "controls" && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-zinc-900 p-10 rounded-[3rem] border-2 border-slate-100 dark:border-zinc-800 shadow-sm max-w-3xl mx-auto"
+              className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-slate-100 dark:border-zinc-800 shadow-sm max-w-3xl mx-auto"
             >
-              <h3 className="text-3xl font-black mb-3 text-slate-800 dark:text-slate-200 flex items-center gap-3">
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-2xl"><Lock className="w-8 h-8 text-purple-600" /></div>
+              <h3 className="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl"><Lock className="w-6 h-6 text-purple-600" /></div>
                 Screen Time Limits
               </h3>
-              <p className="text-slate-500 font-medium mb-10 text-lg">Manage how long your child can access the platform each day.</p>
+              <p className="text-slate-500 font-medium mb-8 text-base">Manage how long your child can access the platform each day.</p>
 
               <div className="space-y-10">
                 <div className="bg-slate-50 dark:bg-zinc-800/50 p-8 rounded-3xl border border-slate-100 dark:border-zinc-800">

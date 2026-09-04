@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Volume2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Volume2, VolumeX, Repeat, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGameSounds } from "@/hooks/useGameSounds";
 import { useUserStore } from "@/store/useUserStore";
@@ -78,10 +78,52 @@ const MODULES = [
 // --- Sub-component: Generic Flashcard Learner ---
 function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[], topicName: string, onExit: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
   const [startTime] = useState(Date.now());
   const { playPop, playLevelUp } = useGameSounds();
   const { logActivity, addXp } = useUserStore();
   const current = moduleData[currentIndex];
+
+  const playPronunciation = (forcePlay = false) => {
+    if (isMuted && !forcePlay) {
+      window.speechSynthesis.cancel();
+      return;
+    }
+    try {
+      window.speechSynthesis.cancel(); // Stop current speech
+      
+      const msg = new SpeechSynthesisUtterance();
+      if (topicName === "Alphabet") {
+        msg.text = `${current.letter} for ${current.word}`;
+      } else {
+        msg.text = current.word;
+      }
+      
+      const availableVoices = window.speechSynthesis.getVoices();
+      const femaleVoice = availableVoices.find(v => v.lang.includes('en') && v.name.includes('Female'));
+      if (femaleVoice) {
+        msg.voice = femaleVoice;
+      }
+      
+      msg.rate = 0.8;
+      msg.pitch = 1.2;
+      
+      // Prevent utterance from being garbage collected
+      (window as any)._activeUtterance = msg;
+      
+      window.speechSynthesis.speak(msg);
+      
+      // Fix for Chrome engine pausing bug
+      if (window.speechSynthesis.resume) {
+        window.speechSynthesis.resume();
+      }
+    } catch (e) { }
+  };
+
+  useEffect(() => {
+    playPronunciation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, isMuted]);
 
   const handleNext = () => {
     playPop();
@@ -105,18 +147,6 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
     if (currentIndex > 0) setCurrentIndex(c => c - 1);
   };
 
-  const playPronunciation = () => {
-    playPop();
-    try {
-      const msg = new SpeechSynthesisUtterance();
-      msg.text = topicName === "Numbers" ? current.word : `${current.letter}. ${current.word}.`;
-      msg.voice = window.speechSynthesis.getVoices().find(v => v.lang.includes('en') && v.name.includes('Female')) || null;
-      msg.rate = 0.8;
-      msg.pitch = 1.2;
-      window.speechSynthesis.speak(msg);
-    } catch (e) { }
-  };
-
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       <div className="flex justify-between w-full mb-8">
@@ -135,54 +165,64 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -50, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl border-4 border-slate-100 dark:border-zinc-800 flex flex-col items-center text-center relative overflow-hidden"
+          className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl p-6 md:p-10 shadow-xl border-2 border-slate-100 dark:border-zinc-800 flex flex-col items-center text-center relative overflow-hidden"
         >
           {/* Decorative Background */}
-          <div className={`absolute inset-0 opacity-20 dark:opacity-10 ${current.bg} blur-3xl rounded-full scale-150 -translate-y-1/2`} />
+          <div className={`absolute inset-0 opacity-20 dark:opacity-10 ${current.bg} blur-2xl rounded-full scale-150 -translate-y-1/2`} />
 
           <div className="relative z-10 flex flex-col items-center w-full">
-            <button
-              onClick={playPronunciation}
-              className="absolute top-0 right-0 p-4 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-full text-slate-500 transition-colors shadow-sm"
-            >
-              <Volume2 className="w-8 h-8" />
-            </button>
+            <div className="absolute top-0 right-0 flex flex-col gap-2">
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-full text-slate-500 transition-colors shadow-sm"
+                title={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+              </button>
+              <button
+                onClick={() => { playPop(); playPronunciation(true); }}
+                className="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-full text-slate-500 transition-colors shadow-sm"
+                title="Repeat"
+              >
+                <Repeat className="w-6 h-6" />
+              </button>
+            </div>
 
             <motion.div
               whileHover={{ scale: 1.1, rotate: [-2, 2, -2, 0] }}
-              className={`text-[8rem] md:text-[12rem] font-black leading-none drop-shadow-xl ${current.color} mb-4 select-none cursor-pointer`}
-              onClick={playPronunciation}
+              className={`text-[6rem] md:text-[8rem] font-black leading-none drop-shadow-md ${current.color} mb-4 select-none cursor-pointer`}
+              onClick={() => { playPop(); playPronunciation(true); }}
             >
               {current.letter}
             </motion.div>
 
-            <div className="flex items-center gap-6 mt-4 bg-slate-50 dark:bg-zinc-800 px-8 py-4 rounded-full border-2 border-slate-100 dark:border-zinc-700 shadow-inner">
-              <span className="text-6xl md:text-7xl drop-shadow-md">{current.emoji}</span>
-              <span className={`text-4xl md:text-5xl font-extrabold ${current.color}`}>{current.word}</span>
+            <div className="flex items-center gap-4 mt-2 bg-slate-50 dark:bg-zinc-800 px-6 py-3 rounded-full border border-slate-100 dark:border-zinc-700 shadow-sm">
+              <span className="text-4xl md:text-5xl drop-shadow-sm">{current.emoji}</span>
+              <span className={`text-2xl md:text-3xl font-extrabold ${current.color}`}>{current.word}</span>
             </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      <div className="flex gap-6 mt-12 w-full max-w-2xl justify-between px-4">
+      <div className="flex gap-4 mt-8 w-full max-w-xl justify-between px-4">
         <Button
           size="lg"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className="h-16 w-16 md:w-32 rounded-full font-black text-lg bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50"
+          className="h-12 w-12 md:w-28 rounded-full font-bold text-base bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50"
         >
-          <ArrowLeft className="w-8 h-8 md:mr-2" />
+          <ArrowLeft className="w-5 h-5 md:mr-2" />
           <span className="hidden md:inline">Back</span>
         </Button>
         <Button
           size="lg"
           onClick={handleNext}
-          className="h-16 flex-1 rounded-full font-black text-xl md:text-2xl shadow-xl shadow-indigo-500/20 bg-indigo-500 hover:bg-indigo-600 group"
+          className="h-12 flex-1 rounded-full font-bold text-lg shadow-md shadow-indigo-500/20 bg-indigo-500 hover:bg-indigo-600 group"
         >
           {currentIndex === moduleData.length - 1 ? (
-            <>Finish <CheckCircle2 className="w-8 h-8 ml-2" /></>
+            <>Finish <CheckCircle2 className="w-5 h-5 ml-2" /></>
           ) : (
-            <>Next <ArrowRight className="w-8 h-8 ml-2 group-hover:translate-x-1 transition-transform" /></>
+            <>Next <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" /></>
           )}
         </Button>
       </div>
@@ -240,19 +280,19 @@ function LearnPageContent() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, type: "spring" }}
-                  whileHover={{ y: -8, scale: 1.02 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveModule(mod.id)}
-                  className={`cursor-pointer rounded-[2.5rem] p-8 shadow-xl flex flex-col items-center text-center relative overflow-hidden group ${mod.color} text-white`}
+                  className={`cursor-pointer rounded-3xl p-6 shadow-lg flex flex-col items-center text-center relative overflow-hidden group ${mod.color} text-white`}
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500" />
 
-                  <div className="text-7xl mb-6 drop-shadow-xl group-hover:scale-110 transition-transform duration-300">
+                  <div className="text-5xl mb-4 drop-shadow-md group-hover:scale-110 transition-transform duration-300">
                     {mod.emoji}
                   </div>
 
-                  <h3 className="text-3xl font-black mb-2 drop-shadow-sm relative z-10">{mod.title}</h3>
-                  <p className="font-bold text-white/80 relative z-10">{mod.desc}</p>
+                  <h3 className="text-2xl font-bold mb-1 drop-shadow-sm relative z-10">{mod.title}</h3>
+                  <p className="font-medium text-white/90 text-sm relative z-10">{mod.desc}</p>
                 </motion.div>
               ))}
             </div>
