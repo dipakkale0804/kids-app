@@ -42,6 +42,6 @@
     "typescript": "^5"
   },
   "overrides": {
-    "jwks-rsa>jose": "4.15.9"
+    "jose": "4.15.9"
   }
 }
