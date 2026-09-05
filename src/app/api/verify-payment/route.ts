@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { adminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     if (generated_signature === razorpay_signature) {
       // Payment is legit! Update the user's profile to Premium in Firebase
       if (userId) {
+        const adminDb = getAdminDb();
         await adminDb.collection('profiles').doc(userId).set({
           isPremium: true,
           updatedAt: new Date().toISOString()
