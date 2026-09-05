@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 import Razorpay from "razorpay";
 
 export async function GET() {
   try {
-    let result: any = { status: "running" };
+    let result: any = { status: "running 2" };
     
     try {
-      result.firebaseKeyExists = !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-      result.razorpayKeyExists = !!process.env.RAZORPAY_KEY_ID;
+      result.envKeys = Object.keys(process.env).filter(k => k.includes("FIREBASE") || k.includes("RAZOR"));
     } catch (e: any) {
       result.envError = e.message;
     }
@@ -18,6 +17,13 @@ export async function GET() {
       result.adminDbLoaded = !!db;
     } catch (e: any) {
       result.adminError = e.message || String(e);
+    }
+    
+    try {
+      const auth = getAdminAuth();
+      result.adminAuthLoaded = !!auth;
+    } catch (e: any) {
+      result.adminAuthError = e.message || String(e);
     }
 
     try {
@@ -30,8 +36,14 @@ export async function GET() {
       result.razorpayError = e.message || String(e);
     }
 
-    return NextResponse.json(result);
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
+    return new Response(JSON.stringify({ outerError: error.message || String(error) }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
