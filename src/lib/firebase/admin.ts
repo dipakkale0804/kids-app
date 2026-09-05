@@ -2,16 +2,20 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-if (!getApps().length) {
+function initFirebase() {
+  if (getApps().length > 0) return;
+  
   try {
     let credential;
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       let serviceAccount;
       let envKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      
       // Strip single quotes if they were accidentally pasted into Vercel
       if (envKey.startsWith("'") && envKey.endsWith("'")) {
         envKey = envKey.slice(1, -1);
       }
+      
       try {
         serviceAccount = JSON.parse(envKey);
       } catch (e) {
@@ -41,5 +45,12 @@ if (!getApps().length) {
   }
 }
 
-export const getAdminAuth = () => getAuth();
-export const getAdminDb = () => getFirestore();
+export const getAdminAuth = () => {
+  initFirebase();
+  return getAuth();
+};
+
+export const getAdminDb = () => {
+  initFirebase();
+  return getFirestore();
+};
