@@ -74,7 +74,7 @@ export function GlobalHeader() {
             >
               <Star className="text-yellow-400 fill-yellow-400 w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md" />
             </motion.div>
-            <span className="hidden sm:block">Dipak KidsLearn</span>
+            <span className="hidden sm:block">KidsLearn</span>
           </motion.div>
         </Link>
 
