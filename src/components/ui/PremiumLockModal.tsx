@@ -60,12 +60,11 @@ export function PremiumLockModal({ isOpen, onClose, title = "Premium Game" }: Pr
       });
       
       let data;
-      const contentType = orderRes.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        data = await orderRes.json();
-      } else {
-        const textError = await orderRes.text();
-        throw new Error(`Server Error (${orderRes.status}): ${textError || "Backend crashed before returning JSON."}`);
+      const responseText = await orderRes.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Server Error (${orderRes.status}): ${responseText || "Backend crashed."}`);
       }
       
       if (!orderRes.ok) throw new Error(data.error || "Failed to create order");
@@ -127,7 +126,7 @@ export function PremiumLockModal({ isOpen, onClose, title = "Premium Game" }: Pr
       rzp.open();
     } catch (err: any) {
       console.error(err);
-      alert("Something went wrong!");
+      alert("Payment Error: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
