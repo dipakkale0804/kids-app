@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useGameSounds } from "@/hooks/useGameSounds";
 import { useUserStore } from "@/store/useUserStore";
 import confetti from "canvas-confetti";
+import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 
 // --- Data ---
 const ALPHABET = [
@@ -69,10 +70,10 @@ const SHAPES = [
 ];
 
 const MODULES = [
-  { id: "alphabet", title: "Alphabet", desc: "Learn A to Z", emoji: "🔤", color: "bg-indigo-500", data: ALPHABET },
-  { id: "numbers", title: "Numbers", desc: "Count 1 to 100", emoji: "🔢", color: "bg-emerald-500", data: NUMBERS },
-  { id: "colors", title: "Colors", desc: "Red, Blue, Green", emoji: "🎨", color: "bg-rose-500", data: COLORS },
-  { id: "shapes", title: "Shapes", desc: "Circles & Squares", emoji: "⭐", color: "bg-amber-500", data: SHAPES },
+  { id: "alphabet", title: "Alphabet", desc: "Learn A to Z", emoji: "🔤", color: "bg-indigo-500", data: ALPHABET, isPremium: false },
+  { id: "numbers", title: "Numbers", desc: "Count 1 to 100", emoji: "🔢", color: "bg-emerald-500", data: NUMBERS, isPremium: true },
+  { id: "colors", title: "Colors", desc: "Red, Blue, Green", emoji: "🎨", color: "bg-rose-500", data: COLORS, isPremium: true },
+  { id: "shapes", title: "Shapes", desc: "Circles & Squares", emoji: "⭐", color: "bg-amber-500", data: SHAPES, isPremium: true },
 ];
 
 // --- Sub-component: Generic Flashcard Learner ---
@@ -238,8 +239,18 @@ function LearnPageContent() {
   const searchParams = useSearchParams();
   const defaultModule = searchParams.get('module');
   const [activeModule, setActiveModule] = useState<string | null>(defaultModule);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const { isPremium } = useUserStore();
 
   const activeModuleData = MODULES.find(m => m.id === activeModule);
+
+  const handleModuleClick = (mod: typeof MODULES[0]) => {
+    if (mod.isPremium && !isPremium) {
+      setShowPremiumModal(true);
+    } else {
+      setActiveModule(mod.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 flex flex-col p-4 md:p-8">
@@ -282,7 +293,7 @@ function LearnPageContent() {
                   transition={{ delay: index * 0.1, type: "spring" }}
                   whileHover={{ y: -5, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveModule(mod.id)}
+                  onClick={() => handleModuleClick(mod)}
                   className={`cursor-pointer rounded-3xl p-6 shadow-lg flex flex-col items-center text-center relative overflow-hidden group ${mod.color} text-white`}
                 >
                   <div className="absolute top-0 right-0 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500" />
@@ -293,11 +304,33 @@ function LearnPageContent() {
 
                   <h3 className="text-2xl font-bold mb-1 drop-shadow-sm relative z-10">{mod.title}</h3>
                   <p className="font-medium text-white/90 text-sm relative z-10">{mod.desc}</p>
+
+                  {/* PRO Badge / Lock */}
+                  {mod.isPremium && !isPremium && (
+                    <div className="absolute top-4 left-4 bg-black/30 backdrop-blur-sm rounded-full p-2">
+                      <div className="w-4 h-4" style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.5))" }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-white opacity-80">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0110 0v4"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                  {mod.isPremium && isPremium && (
+                    <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                      PRO
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
           </div>
         )}
+
+        <PremiumLockModal 
+          isOpen={showPremiumModal} 
+          onClose={() => setShowPremiumModal(false)} 
+        />
       </main>
     </div>
   );
