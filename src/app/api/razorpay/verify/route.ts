@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 
     let decodedToken;
     try {
+      const adminAuth = getAdminAuth();
       decodedToken = await adminAuth.verifyIdToken(token);
     } catch (e) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
 
     // If valid, update the user profile in Firestore to be premium
     try {
+      const adminDb = getAdminDb();
       await adminDb.collection("profiles").doc(decodedToken.uid).update({
         is_premium: true
       });

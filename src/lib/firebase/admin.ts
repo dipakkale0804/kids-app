@@ -10,7 +10,7 @@ if (!getApps().length) {
       try {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
       } catch (e) {
-        serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('ascii'));
+        serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf8'));
       }
       
       // Fix literal '\n' that get escaped when loaded from .env variables
@@ -36,5 +36,5 @@ if (!getApps().length) {
   }
 }
 
-export const adminAuth = getAuth();
-export const adminDb = getFirestore();
+export const getAdminAuth = () => getAuth();
+export const getAdminDb = () => getFirestore();

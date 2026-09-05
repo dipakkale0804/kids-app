@@ -58,9 +58,17 @@ export function PremiumLockModal({ isOpen, onClose, title = "Premium Game" }: Pr
         },
         body: JSON.stringify({ plan: selectedPlan })
       });
-      const data = await orderRes.json();
       
-      if (!orderRes.ok) throw new Error(data.error);
+      let data;
+      const contentType = orderRes.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await orderRes.json();
+      } else {
+        const textError = await orderRes.text();
+        throw new Error(`Server Error (${orderRes.status}): ${textError || "Backend crashed before returning JSON."}`);
+      }
+      
+      if (!orderRes.ok) throw new Error(data.error || "Failed to create order");
 
       // 3. Open Razorpay Checkout
       const options = {

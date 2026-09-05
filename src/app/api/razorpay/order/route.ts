@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { adminAuth } from "@/lib/firebase/admin";
+import { getAdminAuth } from "@/lib/firebase/admin";
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 
     let decodedToken;
     try {
+      const adminAuth = getAdminAuth();
       decodedToken = await adminAuth.verifyIdToken(token);
     } catch (e) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
