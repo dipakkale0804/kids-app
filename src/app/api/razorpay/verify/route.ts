@@ -35,9 +35,25 @@ export async function POST(req: Request) {
     // If valid, update the user profile in Firestore to be premium
     try {
       const adminDb = getAdminDb();
-      await adminDb.collection("profiles").doc(decodedToken.uid).update({
+      const profileRef = adminDb.collection("profiles").doc(decodedToken.uid);
+      
+      // Get the profile first to check for referral code
+      const profileDoc = await profileRef.get();
+      const profileData = profileDoc.data();
+
+      await profileRef.update({
         is_premium: true
       });
+
+      // Log the sale for the influencer if they were referred
+      if (profileData && profileData.referred_by) {
+        await adminDb.collection("referral_sales").add({
+          influencer: profileData.referred_by,
+          userId: decodedToken.uid,
+          razorpay_order_id,
+          date: new Date().toISOString()
+        });
+      }
     } catch (error) {
       console.error("Failed to update premium status:", error);
       return NextResponse.json({ error: "Failed to update premium status in database." }, { status: 500 });
