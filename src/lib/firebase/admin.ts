@@ -7,10 +7,15 @@ if (!getApps().length) {
     let credential;
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       let serviceAccount;
+      let envKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      // Strip single quotes if they were accidentally pasted into Vercel
+      if (envKey.startsWith("'") && envKey.endsWith("'")) {
+        envKey = envKey.slice(1, -1);
+      }
       try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        serviceAccount = JSON.parse(envKey);
       } catch (e) {
-        serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf8'));
+        serviceAccount = JSON.parse(Buffer.from(envKey, 'base64').toString('utf8'));
       }
       
       // Fix literal '\n' that get escaped when loaded from .env variables
