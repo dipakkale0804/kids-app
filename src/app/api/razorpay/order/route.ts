@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     });
 
     // Set amount based on plan
-    const amount = plan === "monthly" ? 1 : 2;
+    const amount = plan === "monthly" ? 199 : 999;
 
     const options = {
       amount: amount * 100, // in paise
