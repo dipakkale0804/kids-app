@@ -50,7 +50,8 @@ export default function AuthPage() {
           level: 1,
           stars: 0,
           coins: 0,
-          is_premium: false
+          is_premium: false,
+          referred_by: localStorage.getItem("referral_code") || null
         });
 
         setMessage({

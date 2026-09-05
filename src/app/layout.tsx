@@ -3,6 +3,7 @@ import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { GlobalHeader } from "@/components/layout/GlobalHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ReferralTracker } from "@/components/layout/ReferralTracker";
 const fredoka = Fredoka({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -31,6 +32,7 @@ export default function RootLayout({
       className={`${fredoka.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ReferralTracker />
         <GlobalHeader />
         <ErrorBoundary>
           {children}
