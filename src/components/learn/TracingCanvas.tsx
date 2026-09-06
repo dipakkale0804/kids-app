@@ -48,8 +48,13 @@ export function TracingCanvas({ initialIndex = 0, onExit }: TracingCanvasProps) 
 
   // Speech pronunciation with toddler-friendly pacing
   const speakChar = useCallback(() => {
+    const isNumber = !isNaN(Number(currentItem.char));
+    const speechText = isNumber 
+      ? `${currentItem.word}!` 
+      : `${currentItem.char} for ${currentItem.word}!`;
+
     speakKidsText({
-      text: `${currentItem.char}! ${currentItem.char} is for ${currentItem.word}. ${currentItem.word}!`,
+      text: speechText,
       rate: 0.74,
       pitch: 1.0,
     });

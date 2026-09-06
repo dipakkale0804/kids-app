@@ -99,11 +99,19 @@ const TELLING_TIME = [
   { letter: "🕗 8:00", word: "Eight O'Clock", phonics: "Bedtime story time!", emoji: "🌙", color: "text-purple-600", bg: "bg-purple-100" },
 ];
 
+const NUMBER_NAMES = [
+  "One", "Two", "Three", "Four", "Five", 
+  "Six", "Seven", "Eight", "Nine", "Ten",
+  "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", 
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"
+];
+
 const NUMBERS_20 = Array.from({ length: 20 }, (_, i) => {
   const n = i + 1;
+  const word = NUMBER_NAMES[i] || n.toString();
   const colors = ["text-red-500", "text-blue-500", "text-emerald-500", "text-yellow-500", "text-purple-500"];
   const bgs = ["bg-red-100", "bg-blue-100", "bg-emerald-100", "bg-yellow-100", "bg-purple-100"];
-  return { letter: n.toString(), word: `Number ${n}`, phonics: n.toString(), emoji: "🌟", color: colors[i % 5], bg: bgs[i % 5] };
+  return { letter: n.toString(), word, phonics: word, emoji: "🌟", color: colors[i % 5], bg: bgs[i % 5] };
 });
 
 // Age-Tier Stage Definitions
@@ -126,7 +134,7 @@ const STAGE_CONFIGS: Record<AgeStage, { label: string; ageSpan: string; modules:
     ageSpan: "Ages 2–3",
     modules: [
       { id: "animals", title: "Animal Sounds", desc: "Moo, Roar & Quack!", emoji: "🦁", color: "from-amber-400 to-orange-500", data: ANIMALS, isPremium: false },
-      { id: "colors", title: "First Colors", desc: "Red, Blue & Green", emoji: "🎨", color: "from-rose-400 to-pink-500", data: COLORS, isPremium: false },
+      { id: "colors", title: "First Colors", desc: "Red, Blue & Green", emoji: "🎨", color: "from-rose-400 to-pink-500", data: COLORS, isPremium: true },
       { id: "shapes", title: "Basic Shapes", desc: "Circles & Stars", emoji: "⭐", color: "from-yellow-400 to-amber-500", data: SHAPES, isPremium: true },
     ],
   },
@@ -135,7 +143,7 @@ const STAGE_CONFIGS: Record<AgeStage, { label: string; ageSpan: string; modules:
     ageSpan: "Ages 4–5",
     modules: [
       { id: "alphabet", title: "Phonics A-Z", desc: "Letter Sounds & Words", emoji: "🔤", color: "from-indigo-500 to-purple-600", data: ALPHABET, isPremium: false },
-      { id: "tracing", title: "Tracing Studio", desc: "Draw Letters with Finger", emoji: "✍️", color: "from-purple-500 to-pink-500", isTracing: true, data: [], isPremium: false },
+      { id: "tracing", title: "Tracing Studio", desc: "Draw Letters with Finger", emoji: "✍️", color: "from-purple-500 to-pink-500", isTracing: true, data: [], isPremium: true },
       { id: "numbers-20", title: "Count 1 to 20", desc: "Visual Numbers & Stars", emoji: "🔢", color: "from-emerald-400 to-teal-600", data: NUMBERS_20, isPremium: true },
       { id: "sight-words", title: "Sight Words", desc: "Early Reading Booster", emoji: "📖", color: "from-sky-400 to-blue-600", data: SIGHT_WORDS, isPremium: true },
     ],
@@ -168,24 +176,25 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
 
     let textToSpeak = "";
     if (topicName.includes("Phonics") || topicName.includes("Alphabet")) {
-      // Natural phrasing: "A! A is for Apple. Apple!"
-      textToSpeak = `${current.letter}! ${current.letter} is for ${current.word}. ${current.word}!`;
+      // Classic preschool learning: "A for Apple", "B for Bear"
+      textToSpeak = `${current.letter} for ${current.word}!`;
+    } else if (topicName.includes("Count") || topicName.includes("Number")) {
+      // Direct counting: "One", "Two", "Three"
+      textToSpeak = `${current.word}!`;
     } else if (topicName.includes("Animal")) {
       textToSpeak = `${current.word}! ${current.phonics || ""}`;
     } else if (topicName.includes("Color")) {
-      textToSpeak = `${current.word}! ${current.phonics || ""}.`;
+      textToSpeak = `${current.word}!`;
     } else if (topicName.includes("Shape") || topicName.includes("Geometry")) {
-      textToSpeak = `${current.word}! ${current.phonics || ""}.`;
+      textToSpeak = `${current.word}!`;
     } else if (topicName.includes("Addition") || topicName.includes("Math")) {
       textToSpeak = `${current.phonics || current.word}!`;
     } else if (topicName.includes("Time") || topicName.includes("Clock")) {
       textToSpeak = `${current.word}. ${current.phonics || ""}`;
     } else if (topicName.includes("Sight Word")) {
-      textToSpeak = `${current.word}! ${current.phonics || ""}.`;
-    } else if (topicName.includes("Count") || topicName.includes("Number")) {
       textToSpeak = `${current.word}!`;
     } else {
-      textToSpeak = `${current.word}. ${current.phonics || ""}`;
+      textToSpeak = `${current.word}!`;
     }
 
     speakKidsText({
