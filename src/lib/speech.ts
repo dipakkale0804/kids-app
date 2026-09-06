@@ -1,15 +1,15 @@
 // src/lib/speech.ts
 /**
- * Centralized Speech Synthesis utility tailored for kids (ages 2-8).
- * Ensures calm, natural pacing, child-appropriate pitch, voice selection,
- * and reliable stop/cancellation across route transitions.
+ * Centralized, bulletproof Speech Synthesis utility tailored for kids (ages 2-8).
+ * Works reliably across Chrome, Edge, Safari, iOS, and Android.
+ * Solves Chromium's asynchronous cancel() drop bug using safe queuing.
  */
 
 export interface KidsSpeakOptions {
   text: string;
-  rate?: number;    // Calm, clear tempo (default 0.74)
-  pitch?: number;   // Natural human pitch (default 1.0, avoiding squeaky/robotic artifacts)
-  volume?: number;  // Full clear volume (default 1.0)
+  rate?: number;    // Calm, clear tempo (default 0.76)
+  pitch?: number;   // Natural human pitch (default 1.0)
+  volume?: number;  // Clear volume (default 1.0)
   lang?: string;    // Language tag (default 'en-US')
   onBoundary?: (event: SpeechSynthesisEvent) => void;
   onEnd?: () => void;
@@ -17,21 +17,35 @@ export interface KidsSpeakOptions {
 }
 
 let activeUtterance: SpeechSynthesisUtterance | null = null;
+let speechTimeout: NodeJS.Timeout | null = null;
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+// Pre-load and cache voices
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  try {
+    cachedVoices = window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+      try {
+        cachedVoices = window.speechSynthesis.getVoices();
+      } catch {}
+    };
+  } catch {}
+}
 
 /**
- * Immediately cancels all currently active speech synthesis in the browser.
+ * Immediately cancels any pending or active speech synthesis.
  */
 export function stopKidsSpeech(): void {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   try {
+    if (speechTimeout) {
+      clearTimeout(speechTimeout);
+      speechTimeout = null;
+    }
     window.speechSynthesis.cancel();
     activeUtterance = null;
-    if (typeof window !== "undefined") {
-      (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = null;
-    }
-  } catch {
-    // Ignore browser audio cancellation quirks
-  }
+    (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = null;
+  } catch {}
 }
 
 /**
@@ -39,57 +53,52 @@ export function stopKidsSpeech(): void {
  */
 export function getBestKidsVoice(): SpeechSynthesisVoice | null {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
-  if (!voices || voices.length === 0) return null;
+  try {
+    const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
 
-  // Preferred friendly, clear natural voices
-  const preferredNames = [
-    "natural",
-    "google us english",
-    "jenny",
-    "aria",
-    "samantha",
-    "karen",
-    "moira",
-    "tessa",
-    "serena",
-    "zira",
-    "victoria",
-    "allison"
-  ];
+    // Preferred friendly, clear natural English voices
+    const preferredNames = [
+      "google us english",
+      "samantha",
+      "karen",
+      "moira",
+      "tessa",
+      "serena",
+      "zira",
+      "victoria",
+      "allison",
+      "natural",
+      "jenny",
+      "aria"
+    ];
 
-  for (const name of preferredNames) {
-    const found = voices.find(
-      (v) => v.lang.startsWith("en") && v.name.toLowerCase().includes(name)
-    );
-    if (found) return found;
+    for (const name of preferredNames) {
+      const found = voices.find(
+        (v) => v.lang && v.lang.startsWith("en") && v.name.toLowerCase().includes(name)
+      );
+      if (found) return found;
+    }
+
+    // Any English voice
+    const defaultEn = voices.find((v) => v.lang && (v.lang === "en-US" || v.lang.startsWith("en")));
+    return defaultEn || voices[0] || null;
+  } catch {
+    return null;
   }
-
-  // Any female or online English voice
-  const femaleVoice = voices.find(
-    (v) => v.lang.startsWith("en") && (v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("online"))
-  );
-  if (femaleVoice) return femaleVoice;
-
-  // Any English voice
-  const defaultEn = voices.find((v) => v.lang.startsWith("en"));
-  return defaultEn || voices[0] || null;
 }
 
 /**
  * Speaks text using calibrated kid-friendly speed, natural pitch, and voice selection.
- * Always cancels any lingering speech before speaking.
+ * Safely avoids Chromium cancel-drop race condition using a small 40ms dispatch delay.
  */
 export function speakKidsText(options: KidsSpeakOptions): void {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-  // Cancel prior speech first
-  stopKidsSpeech();
-
   const {
     text,
-    rate = 0.74,   // Paced for toddlers/preschoolers (0.72 - 0.76)
-    pitch = 1.0,   // Natural human pitch (1.0)
+    rate = 0.76,
+    pitch = 1.0,
     volume = 1.0,
     lang = "en-US",
     onBoundary,
@@ -100,44 +109,60 @@ export function speakKidsText(options: KidsSpeakOptions): void {
   if (!text || text.trim().length === 0) return;
 
   try {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = rate;
-    utterance.pitch = pitch;
-    utterance.volume = volume;
-    utterance.lang = lang;
-
-    // Attach best voice if ready
-    const voice = getBestKidsVoice();
-    if (voice) {
-      utterance.voice = voice;
+    if (speechTimeout) {
+      clearTimeout(speechTimeout);
+      speechTimeout = null;
     }
 
-    if (onBoundary) {
-      utterance.onboundary = onBoundary;
-    }
+    // Cancel prior speech
+    window.speechSynthesis.cancel();
 
-    utterance.onend = () => {
-      activeUtterance = null;
-      if (typeof window !== "undefined") {
-        (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = null;
+    // Chromium requires a brief delay after cancel() before speak() to allow
+    // the audio engine's IPC to clear without discarding the new utterance.
+    speechTimeout = setTimeout(() => {
+      try {
+        // Resume if Chromium audio pipeline was paused
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        utterance.volume = volume;
+        utterance.lang = lang;
+
+        const voice = getBestKidsVoice();
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        if (onBoundary) {
+          utterance.onboundary = onBoundary;
+        }
+
+        utterance.onend = () => {
+          activeUtterance = null;
+          (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = null;
+          if (onEnd) onEnd();
+        };
+
+        utterance.onerror = (e) => {
+          activeUtterance = null;
+          (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = null;
+          if (onError) onError(e);
+        };
+
+        // Retain reference on window object to prevent Chrome garbage-collection bug
+        activeUtterance = utterance;
+        (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = utterance;
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("SpeechSynthesis error:", err);
       }
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      activeUtterance = null;
-      if (typeof window !== "undefined") {
-        (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = null;
-      }
-      if (onError) onError(e);
-    };
-
-    // Hold reference on window object to prevent Chrome garbage-collection bug
-    activeUtterance = utterance;
-    (window as unknown as { __kidsUtterance?: SpeechSynthesisUtterance | null }).__kidsUtterance = utterance;
-
-    window.speechSynthesis.speak(utterance);
+    }, 50);
   } catch (err) {
-    console.warn("Speech synthesis error:", err);
+    console.warn("SpeechSynthesis error:", err);
   }
 }

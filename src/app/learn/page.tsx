@@ -196,19 +196,16 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
   };
 
   useEffect(() => {
-    playPronunciation();
+    const timer = setTimeout(() => {
+      playPronunciation();
+    }, 150);
+
     return () => {
+      clearTimeout(timer);
       stopKidsSpeech();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, isMuted]);
-
-  // Clean up speech when leaving or unmounting the learner
-  useEffect(() => {
-    return () => {
-      stopKidsSpeech();
-    };
-  }, []);
 
   const handleExit = () => {
     stopKidsSpeech();
@@ -342,6 +339,7 @@ function LearnPageContent() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const { isPremium } = useUserStore();
+  const { playPop } = useGameSounds();
 
   // Cancel any lingering speech when leaving or unmounting the Learn module
   useEffect(() => {
@@ -356,6 +354,7 @@ function LearnPageContent() {
     .find((m) => m.id === activeModuleId);
 
   const handleStageSelect = (stageKey: AgeStage) => {
+    playPop();
     stopKidsSpeech();
     setActiveModuleId(null);
     setIsTracingActive(false);
@@ -363,7 +362,7 @@ function LearnPageContent() {
   };
 
   const handleModuleClick = (mod: ModuleConfig) => {
-    stopKidsSpeech();
+    playPop();
     if (mod.isPremium && !isPremium) {
       setShowPremiumModal(true);
       return;
@@ -462,6 +461,24 @@ function LearnPageContent() {
                   className={`cursor-pointer rounded-[2rem] p-6 shadow-xl flex flex-col items-center text-center relative overflow-hidden group bg-gradient-to-br ${mod.color} text-white border-4 border-white/20`}
                 >
                   <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+
+                  {/* Audio Voice Preview Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playPop();
+                      speakKidsText({
+                        text: `${mod.title}! ${mod.desc}.`,
+                        rate: 0.76,
+                        pitch: 1.0,
+                      });
+                    }}
+                    className="absolute top-4 left-4 p-2.5 bg-white/20 hover:bg-white/40 active:scale-95 rounded-full backdrop-blur-md transition-all text-white shadow-md z-10"
+                    title={`Hear ${mod.title}`}
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
 
                   {/* Icon Display */}
                   <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center text-5xl mb-4 shadow-inner group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300">

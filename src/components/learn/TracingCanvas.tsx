@@ -91,18 +91,15 @@ export function TracingCanvas({ initialIndex = 0, onExit }: TracingCanvasProps) 
     setCompleted(false);
     setTracedPoints(0);
     drawGuide();
-    speakChar();
+    const timer = setTimeout(() => {
+      speakChar();
+    }, 150);
+
     return () => {
+      clearTimeout(timer);
       stopKidsSpeech();
     };
   }, [index, drawGuide, speakChar]);
-
-  // Clean up on component unmount
-  useEffect(() => {
-    return () => {
-      stopKidsSpeech();
-    };
-  }, []);
 
   // Tracing drawing handlers
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
