@@ -125,7 +125,7 @@ const STAGE_CONFIGS: Record<AgeStage, { label: string; ageSpan: string; modules:
     ageSpan: "Ages 2–3",
     modules: [
       { id: "animals", title: "Animal Sounds", desc: "Moo, Roar & Quack!", emoji: "🦁", color: "from-amber-400 to-orange-500", data: ANIMALS, isPremium: false },
-      { id: "colors", title: "First Colors", desc: "Red, Blue & Green", emoji: "🎨", color: "from-rose-400 to-pink-500", data: COLORS, isPremium: false },
+      { id: "colors", title: "First Colors", desc: "Red, Blue & Green", emoji: "🎨", color: "from-rose-400 to-pink-500", data: COLORS, isPremium: true },
       { id: "shapes", title: "Basic Shapes", desc: "Circles & Stars", emoji: "⭐", color: "from-yellow-400 to-amber-500", data: SHAPES, isPremium: true },
     ],
   },
@@ -134,7 +134,7 @@ const STAGE_CONFIGS: Record<AgeStage, { label: string; ageSpan: string; modules:
     ageSpan: "Ages 4–5",
     modules: [
       { id: "alphabet", title: "Phonics A-Z", desc: "Letter Sounds & Words", emoji: "🔤", color: "from-indigo-500 to-purple-600", data: ALPHABET, isPremium: false },
-      { id: "tracing", title: "Tracing Studio", desc: "Draw Letters with Finger", emoji: "✍️", color: "from-purple-500 to-pink-500", isTracing: true, data: [], isPremium: false },
+      { id: "tracing", title: "Tracing Studio", desc: "Draw Letters with Finger", emoji: "✍️", color: "from-purple-500 to-pink-500", isTracing: true, data: [], isPremium: true },
       { id: "numbers-20", title: "Count 1 to 20", desc: "Visual Numbers & Stars", emoji: "🔢", color: "from-emerald-400 to-teal-600", data: NUMBERS_20, isPremium: true },
       { id: "sight-words", title: "Sight Words", desc: "Early Reading Booster", emoji: "📖", color: "from-sky-400 to-blue-600", data: SIGHT_WORDS, isPremium: true },
     ],
@@ -306,11 +306,28 @@ function LearnPageContent() {
   const defaultModule = searchParams.get("module");
 
   const [currentStage, setCurrentStage] = useState<AgeStage>("preschool");
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(defaultModule);
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [isTracingActive, setIsTracingActive] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const { isPremium } = useUserStore();
+
+  useEffect(() => {
+    if (defaultModule) {
+      const found = Object.values(STAGE_CONFIGS)
+        .flatMap((s) => s.modules)
+        .find((m) => m.id === defaultModule);
+      if (found) {
+        if (found.isPremium && !isPremium) {
+          setShowPremiumModal(true);
+        } else if (found.isTracing) {
+          setIsTracingActive(true);
+        } else {
+          setActiveModuleId(found.id);
+        }
+      }
+    }
+  }, [defaultModule, isPremium]);
 
   const stageConfig = STAGE_CONFIGS[currentStage];
   const activeModule = Object.values(STAGE_CONFIGS)
@@ -425,14 +442,32 @@ function LearnPageContent() {
                   <h3 className="text-2xl font-black mb-1 drop-shadow-sm">{mod.title}</h3>
                   <p className="font-bold text-white/90 text-sm mb-4">{mod.desc}</p>
 
-                  <div className="mt-auto inline-flex items-center gap-1 bg-white/25 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
-                    {mod.isTracing ? <><Edit3 className="w-3.5 h-3.5" /> Interactive Tracing</> : <><BookOpen className="w-3.5 h-3.5" /> Start Lesson</>}
+                  <div className="mt-auto inline-flex items-center gap-1.5 bg-white/25 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
+                    {mod.isPremium && !isPremium ? (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-yellow-300" /> Unlock with PRO
+                      </>
+                    ) : mod.isTracing ? (
+                      <>
+                        <Edit3 className="w-3.5 h-3.5" /> Interactive Tracing
+                      </>
+                    ) : (
+                      <>
+                        <BookOpen className="w-3.5 h-3.5" /> Start Lesson
+                      </>
+                    )}
                   </div>
 
-                  {/* PRO Padlock */}
+                  {/* Free vs PRO Top Badge */}
+                  {!mod.isPremium && (
+                    <div className="absolute top-4 right-4 bg-emerald-500/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-md tracking-wider border border-white/20">
+                      FREE
+                    </div>
+                  )}
                   {mod.isPremium && !isPremium && (
-                    <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md rounded-full p-2.5 shadow-lg border border-white/20">
-                      <Lock className="w-4 h-4 text-yellow-400" />
+                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md rounded-full px-2.5 py-1 shadow-lg border border-white/20 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-yellow-400" />
+                      <span className="text-[10px] font-black text-yellow-400 tracking-wider">PRO</span>
                     </div>
                   )}
                   {mod.isPremium && isPremium && (
