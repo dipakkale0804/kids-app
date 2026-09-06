@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useGameSounds } from "@/hooks/useGameSounds";
 import { useUserStore } from "@/store/useUserStore";
-import { speakKidsText, stopKidsSpeech } from "@/lib/speech";
 
 interface TracingItem {
   id: string;
@@ -46,18 +45,18 @@ export function TracingCanvas({ initialIndex = 0, onExit }: TracingCanvasProps) 
 
   const currentItem = TRACING_ITEMS[index % TRACING_ITEMS.length];
 
-  // Speech pronunciation with toddler-friendly pacing
+  // Speech pronunciation
   const speakChar = useCallback(() => {
-    const isNumber = !isNaN(Number(currentItem.char));
-    const speechText = isNumber 
-      ? `${currentItem.word}!` 
-      : `${currentItem.char} for ${currentItem.word}!`;
-
-    speakKidsText({
-      text: speechText,
-      rate: 0.74,
-      pitch: 1.0,
-    });
+    try {
+      window.speechSynthesis.cancel();
+      const text = `${currentItem.char}. ${currentItem.phonics} as in ${currentItem.word}!`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.85;
+      utterance.pitch = 1.2;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      // Audio speech synthesis fallback
+    }
   }, [currentItem]);
 
   // Redraw template guide on canvas
@@ -96,14 +95,7 @@ export function TracingCanvas({ initialIndex = 0, onExit }: TracingCanvasProps) 
     setCompleted(false);
     setTracedPoints(0);
     drawGuide();
-    const timer = setTimeout(() => {
-      speakChar();
-    }, 150);
-
-    return () => {
-      clearTimeout(timer);
-      stopKidsSpeech();
-    };
+    speakChar();
   }, [index, drawGuide, speakChar]);
 
   // Tracing drawing handlers
@@ -195,16 +187,12 @@ export function TracingCanvas({ initialIndex = 0, onExit }: TracingCanvasProps) 
       score: 100,
     });
 
-    speakKidsText({
-      text: `Super job! You traced the letter ${currentItem.char}!`,
-      rate: 0.76,
-      pitch: 1.0,
-    });
-  };
-
-  const handleExit = () => {
-    stopKidsSpeech();
-    onExit();
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`Super job! You traced the letter ${currentItem.char}!`);
+      utterance.pitch = 1.3;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {}
   };
 
   const handleNext = () => {
@@ -223,7 +211,7 @@ export function TracingCanvas({ initialIndex = 0, onExit }: TracingCanvasProps) 
       <div className="flex items-center justify-between w-full mb-6">
         <Button
           variant="ghost"
-          onClick={handleExit}
+          onClick={onExit}
           className="rounded-full font-bold px-4 bg-white/70 dark:bg-zinc-800/70 border border-slate-200 dark:border-zinc-700 shadow-sm hover:scale-105"
         >
           <ArrowLeft className="w-5 h-5 mr-2" /> Exit Tracing

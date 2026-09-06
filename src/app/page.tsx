@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { Gamepad2, Palette, BookOpen, Map, Gift, ShieldCheck, Trophy, FlaskConical, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,7 @@ export default function Home() {
     }
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -100,7 +100,7 @@ export default function Home() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { 
       opacity: 1, 

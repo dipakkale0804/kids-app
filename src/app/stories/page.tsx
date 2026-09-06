@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/useUserStore";
 import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 import confetti from "canvas-confetti";
-import { speakKidsText, stopKidsSpeech } from "@/lib/speech";
 
 interface StoryPage {
   text: string;
@@ -136,17 +135,15 @@ export default function StoriesPage() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const { isPremium, addXp, addStars } = useUserStore();
-  const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const currentPage = activeStory?.pages[pageIndex];
 
   // Stop speech when component unmounts or story exits
   const stopSpeech = () => {
-    if (advanceTimeoutRef.current) {
-      clearTimeout(advanceTimeoutRef.current);
-      advanceTimeoutRef.current = null;
-    }
-    stopKidsSpeech();
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
     setIsPlaying(false);
     setHighlightedWordIndex(-1);
   };
@@ -162,37 +159,43 @@ export default function StoriesPage() {
     if (!currentPage) return;
     stopSpeech();
 
-    speakKidsText({
-      text: currentPage.text,
-      rate: 0.76, // soothing, clear story narration pacing
-      pitch: 1.0,
-      onBoundary: (event) => {
-        if (event.name === "word") {
-          const charIndex = event.charIndex;
-          const textUpToChar = currentPage.text.substring(0, charIndex);
-          const wordIdx = textUpToChar.split(" ").length - 1;
-          setHighlightedWordIndex(wordIdx);
-        }
-      },
-      onEnd: () => {
-        setIsPlaying(false);
-        setHighlightedWordIndex(-1);
+    const words = currentPage.text.split(" ");
+    const utterance = new SpeechSynthesisUtterance(currentPage.text);
+    utteranceRef.current = utterance;
 
-        // Auto-advance if not on last page
-        if (activeStory && pageIndex < activeStory.pages.length - 1) {
-          advanceTimeoutRef.current = setTimeout(() => {
-            setPageIndex((p) => p + 1);
-          }, 800);
-        } else if (activeStory && pageIndex === activeStory.pages.length - 1) {
-          // Story complete!
-          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-          addXp(60);
-          addStars(3);
-        }
-      },
-    });
+    utterance.rate = 0.82;
+    utterance.pitch = 1.15;
+
+    // Word boundary event for karaoke highlight
+    utterance.onboundary = (event) => {
+      if (event.name === "word") {
+        const charIndex = event.charIndex;
+        // Find which word corresponds to charIndex
+        const textUpToChar = currentPage.text.substring(0, charIndex);
+        const wordIdx = textUpToChar.split(" ").length - 1;
+        setHighlightedWordIndex(wordIdx);
+      }
+    };
+
+    utterance.onend = () => {
+      setIsPlaying(false);
+      setHighlightedWordIndex(-1);
+
+      // Auto-advance if not on last page
+      if (activeStory && pageIndex < activeStory.pages.length - 1) {
+        setTimeout(() => {
+          setPageIndex(p => p + 1);
+        }, 800);
+      } else if (activeStory && pageIndex === activeStory.pages.length - 1) {
+        // Story complete!
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        addXp(60);
+        addStars(3);
+      }
+    };
 
     setIsPlaying(true);
+    window.speechSynthesis.speak(utterance);
   };
 
   // When changing pages, trigger reading if playing was active
@@ -238,14 +241,7 @@ export default function StoriesPage() {
       <header className="flex justify-between items-center p-4 md:p-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-purple-100 dark:border-zinc-800 sticky top-0 z-30">
         <Button
           variant="ghost"
-          onClick={() => {
-            stopSpeech();
-            if (activeStory) {
-              handleExitStory();
-            } else {
-              router.push("/");
-            }
-          }}
+          onClick={activeStory ? handleExitStory : () => router.push("/")}
           className="rounded-full font-bold px-5 bg-white dark:bg-zinc-800 border border-slate-200 shadow-sm hover:scale-105"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />

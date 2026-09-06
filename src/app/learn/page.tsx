@@ -14,7 +14,6 @@ import { useUserStore } from "@/store/useUserStore";
 import confetti from "canvas-confetti";
 import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 import { TracingCanvas } from "@/components/learn/TracingCanvas";
-import { speakKidsText, stopKidsSpeech } from "@/lib/speech";
 
 // --- Curated Curriculum Data ---
 const ALPHABET = [
@@ -99,19 +98,11 @@ const TELLING_TIME = [
   { letter: "🕗 8:00", word: "Eight O'Clock", phonics: "Bedtime story time!", emoji: "🌙", color: "text-purple-600", bg: "bg-purple-100" },
 ];
 
-const NUMBER_NAMES = [
-  "One", "Two", "Three", "Four", "Five", 
-  "Six", "Seven", "Eight", "Nine", "Ten",
-  "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", 
-  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"
-];
-
 const NUMBERS_20 = Array.from({ length: 20 }, (_, i) => {
   const n = i + 1;
-  const word = NUMBER_NAMES[i] || n.toString();
   const colors = ["text-red-500", "text-blue-500", "text-emerald-500", "text-yellow-500", "text-purple-500"];
   const bgs = ["bg-red-100", "bg-blue-100", "bg-emerald-100", "bg-yellow-100", "bg-purple-100"];
-  return { letter: n.toString(), word, phonics: word, emoji: "🌟", color: colors[i % 5], bg: bgs[i % 5] };
+  return { letter: n.toString(), word: `Number ${n}`, phonics: n.toString(), emoji: "🌟", color: colors[i % 5], bg: bgs[i % 5] };
 });
 
 // Age-Tier Stage Definitions
@@ -134,7 +125,7 @@ const STAGE_CONFIGS: Record<AgeStage, { label: string; ageSpan: string; modules:
     ageSpan: "Ages 2–3",
     modules: [
       { id: "animals", title: "Animal Sounds", desc: "Moo, Roar & Quack!", emoji: "🦁", color: "from-amber-400 to-orange-500", data: ANIMALS, isPremium: false },
-      { id: "colors", title: "First Colors", desc: "Red, Blue & Green", emoji: "🎨", color: "from-rose-400 to-pink-500", data: COLORS, isPremium: true },
+      { id: "colors", title: "First Colors", desc: "Red, Blue & Green", emoji: "🎨", color: "from-rose-400 to-pink-500", data: COLORS, isPremium: false },
       { id: "shapes", title: "Basic Shapes", desc: "Circles & Stars", emoji: "⭐", color: "from-yellow-400 to-amber-500", data: SHAPES, isPremium: true },
     ],
   },
@@ -143,7 +134,7 @@ const STAGE_CONFIGS: Record<AgeStage, { label: string; ageSpan: string; modules:
     ageSpan: "Ages 4–5",
     modules: [
       { id: "alphabet", title: "Phonics A-Z", desc: "Letter Sounds & Words", emoji: "🔤", color: "from-indigo-500 to-purple-600", data: ALPHABET, isPremium: false },
-      { id: "tracing", title: "Tracing Studio", desc: "Draw Letters with Finger", emoji: "✍️", color: "from-purple-500 to-pink-500", isTracing: true, data: [], isPremium: true },
+      { id: "tracing", title: "Tracing Studio", desc: "Draw Letters with Finger", emoji: "✍️", color: "from-purple-500 to-pink-500", isTracing: true, data: [], isPremium: false },
       { id: "numbers-20", title: "Count 1 to 20", desc: "Visual Numbers & Stars", emoji: "🔢", color: "from-emerald-400 to-teal-600", data: NUMBERS_20, isPremium: true },
       { id: "sight-words", title: "Sight Words", desc: "Early Reading Booster", emoji: "📖", color: "from-sky-400 to-blue-600", data: SIGHT_WORDS, isPremium: true },
     ],
@@ -170,56 +161,31 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
 
   const playPronunciation = (forcePlay = false) => {
     if (isMuted && !forcePlay) {
-      stopKidsSpeech();
+      window.speechSynthesis.cancel();
       return;
     }
+    try {
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance();
 
-    let textToSpeak = "";
-    if (topicName.includes("Phonics") || topicName.includes("Alphabet")) {
-      // Classic preschool learning: "A for Apple", "B for Bear"
-      textToSpeak = `${current.letter} for ${current.word}!`;
-    } else if (topicName.includes("Count") || topicName.includes("Number")) {
-      // Direct counting: "One", "Two", "Three"
-      textToSpeak = `${current.word}!`;
-    } else if (topicName.includes("Animal")) {
-      textToSpeak = `${current.word}! ${current.phonics || ""}`;
-    } else if (topicName.includes("Color")) {
-      textToSpeak = `${current.word}!`;
-    } else if (topicName.includes("Shape") || topicName.includes("Geometry")) {
-      textToSpeak = `${current.word}!`;
-    } else if (topicName.includes("Addition") || topicName.includes("Math")) {
-      textToSpeak = `${current.phonics || current.word}!`;
-    } else if (topicName.includes("Time") || topicName.includes("Clock")) {
-      textToSpeak = `${current.word}. ${current.phonics || ""}`;
-    } else if (topicName.includes("Sight Word")) {
-      textToSpeak = `${current.word}!`;
-    } else {
-      textToSpeak = `${current.word}!`;
-    }
+      if (topicName.includes("Phonics") || topicName.includes("Alphabet")) {
+        msg.text = `${current.letter}. ${current.phonics || current.letter} as in ${current.word}!`;
+      } else if (topicName.includes("Animal")) {
+        msg.text = `${current.word}! ${current.phonics}`;
+      } else {
+        msg.text = `${current.word}. ${current.phonics || ""}`;
+      }
 
-    speakKidsText({
-      text: textToSpeak,
-      rate: 0.74, // gentle, clear pacing for kids
-      pitch: 1.0, // natural voice pitch, avoiding robot distortion
-    });
+      msg.rate = 0.85;
+      msg.pitch = 1.25;
+      window.speechSynthesis.speak(msg);
+    } catch (e) {}
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      playPronunciation();
-    }, 150);
-
-    return () => {
-      clearTimeout(timer);
-      stopKidsSpeech();
-    };
+    playPronunciation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, isMuted]);
-
-  const handleExit = () => {
-    stopKidsSpeech();
-    onExit();
-  };
 
   const handleNext = () => {
     playPop();
@@ -235,10 +201,7 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
       addXp(60);
       addStars(3);
 
-      setTimeout(() => {
-        stopKidsSpeech();
-        onExit();
-      }, 2600);
+      setTimeout(onExit, 2600);
     }
   };
 
@@ -250,7 +213,7 @@ function FlashcardLearner({ moduleData, topicName, onExit }: { moduleData: any[]
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       <div className="flex justify-between w-full mb-8 items-center">
-        <Button variant="ghost" onClick={handleExit} className="font-bold rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-slate-200">
+        <Button variant="ghost" onClick={onExit} className="font-bold rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-slate-200">
           <ArrowLeft className="w-5 h-5 mr-2" /> Exit Lesson
         </Button>
         <div className="font-black text-purple-600 bg-purple-50 dark:bg-purple-950/50 px-5 py-2 rounded-full shadow-sm border border-purple-200 dark:border-purple-800">
@@ -348,30 +311,13 @@ function LearnPageContent() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const { isPremium } = useUserStore();
-  const { playPop } = useGameSounds();
-
-  // Cancel any lingering speech when leaving or unmounting the Learn module
-  useEffect(() => {
-    return () => {
-      stopKidsSpeech();
-    };
-  }, []);
 
   const stageConfig = STAGE_CONFIGS[currentStage];
   const activeModule = Object.values(STAGE_CONFIGS)
     .flatMap((s) => s.modules)
     .find((m) => m.id === activeModuleId);
 
-  const handleStageSelect = (stageKey: AgeStage) => {
-    playPop();
-    stopKidsSpeech();
-    setActiveModuleId(null);
-    setIsTracingActive(false);
-    setCurrentStage(stageKey);
-  };
-
   const handleModuleClick = (mod: ModuleConfig) => {
-    playPop();
     if (mod.isPremium && !isPremium) {
       setShowPremiumModal(true);
       return;
@@ -389,7 +335,7 @@ function LearnPageContent() {
       {/* Top App Header */}
       {!activeModuleId && !isTracingActive && (
         <header className="flex flex-col sm:flex-row justify-between items-center w-full max-w-6xl mx-auto mb-10 mt-2 gap-4">
-          <Link href="/" onClick={() => stopKidsSpeech()}>
+          <Link href="/">
             <Button
               variant="ghost"
               className="rounded-full font-bold h-12 px-6 bg-white dark:bg-zinc-900 border-2 border-slate-200 dark:border-zinc-800 shadow-sm hover:scale-105"
@@ -407,7 +353,7 @@ function LearnPageContent() {
                 <button
                   key={stageKey}
                   type="button"
-                  onClick={() => handleStageSelect(stageKey)}
+                  onClick={() => setCurrentStage(stageKey)}
                   className={`px-4 md:px-6 py-2.5 rounded-full font-black text-sm md:text-base transition-all flex items-center gap-2 ${
                     isSelected
                       ? "bg-purple-600 text-white shadow-lg shadow-purple-500/30 scale-105"
@@ -470,24 +416,6 @@ function LearnPageContent() {
                   className={`cursor-pointer rounded-[2rem] p-6 shadow-xl flex flex-col items-center text-center relative overflow-hidden group bg-gradient-to-br ${mod.color} text-white border-4 border-white/20`}
                 >
                   <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
-
-                  {/* Audio Voice Preview Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      playPop();
-                      speakKidsText({
-                        text: `${mod.title}! ${mod.desc}.`,
-                        rate: 0.76,
-                        pitch: 1.0,
-                      });
-                    }}
-                    className="absolute top-4 left-4 p-2.5 bg-white/20 hover:bg-white/40 active:scale-95 rounded-full backdrop-blur-md transition-all text-white shadow-md z-10"
-                    title={`Hear ${mod.title}`}
-                  >
-                    <Volume2 className="w-5 h-5" />
-                  </button>
 
                   {/* Icon Display */}
                   <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center text-5xl mb-4 shadow-inner group-hover:rotate-6 group-hover:scale-110 transition-transform duration-300">

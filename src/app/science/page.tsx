@@ -12,7 +12,6 @@ import { useGameSounds } from "@/hooks/useGameSounds";
 import { useUserStore } from "@/store/useUserStore";
 import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 import confetti from "canvas-confetti";
-import { speakKidsText, stopKidsSpeech } from "@/lib/speech";
 
 // --- Potion Challenges Data ---
 const CHALLENGES = [
@@ -62,21 +61,16 @@ export default function ScienceLabPage() {
 
   const challenge = CHALLENGES[currentLevel];
 
-  // Voice narration for planets with clear, natural kid-friendly pacing
+  // Voice narration for planets
   const speakFact = (planet: Planet) => {
-    speakKidsText({
-      text: `${planet.name}! ${planet.fact}`,
-      rate: 0.76,
-      pitch: 1.0,
-    });
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`${planet.name}! ${planet.fact}`);
+      utterance.rate = 0.88;
+      utterance.pitch = 1.2;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {}
   };
-
-  // Clean up speech on unmount
-  useEffect(() => {
-    return () => {
-      stopKidsSpeech();
-    };
-  }, []);
 
   const handlePlanetSelect = (planet: Planet) => {
     if (planet.isPremium && !isPremium) {
@@ -183,10 +177,7 @@ export default function ScienceLabPage() {
         <header className="flex flex-wrap justify-between items-center p-4 bg-slate-900/80 border-b-2 border-slate-800 z-20 backdrop-blur-md gap-4">
           <Button
             variant="ghost"
-            onClick={() => {
-              stopKidsSpeech();
-              router.push("/");
-            }}
+            onClick={() => router.push("/")}
             className="hover:bg-slate-800 font-bold rounded-full text-white"
           >
             <ArrowLeft className="w-5 h-5 mr-2" /> Back Home
@@ -195,10 +186,7 @@ export default function ScienceLabPage() {
           {/* Mode Switcher Tabs */}
           <div className="flex items-center p-1 bg-slate-800 rounded-full border border-slate-700 shadow-inner">
             <button
-              onClick={() => {
-                stopKidsSpeech();
-                setActiveTab("potions");
-              }}
+              onClick={() => setActiveTab("potions")}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full font-black text-xs md:text-sm transition-all ${
                 activeTab === "potions"
                   ? "bg-emerald-500 text-white shadow-md scale-105"
@@ -208,10 +196,7 @@ export default function ScienceLabPage() {
               <FlaskConical className="w-4 h-4" /> Color Chemistry
             </button>
             <button
-              onClick={() => {
-                stopKidsSpeech();
-                setActiveTab("space");
-              }}
+              onClick={() => setActiveTab("space")}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full font-black text-xs md:text-sm transition-all ${
                 activeTab === "space"
                   ? "bg-purple-600 text-white shadow-md scale-105"

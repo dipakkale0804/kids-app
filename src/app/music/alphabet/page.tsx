@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mic2, Play, SquareSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { speakKidsText, stopKidsSpeech } from "@/lib/speech";
 
 const LETTERS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
@@ -28,16 +27,18 @@ export default function AlphabetSongPage() {
   useEffect(() => {
     return () => {
       if (songTimeoutRef.current) clearTimeout(songTimeoutRef.current);
-      stopKidsSpeech();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
 
-  const speak = (text: string, rate: number = 0.8) => {
-    speakKidsText({
-      text,
-      rate,
-      pitch: 1.0,
-    });
+  const speak = (text: string, rate: number = 0.9) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.pitch = 1.3;
+      msg.rate = rate;
+      window.speechSynthesis.speak(msg);
+    }
   };
 
   const playLetter = (letter: string) => {
@@ -88,21 +89,14 @@ export default function AlphabetSongPage() {
     setIsPlayingSong(false);
     setActiveLetter(null);
     if (songTimeoutRef.current) clearTimeout(songTimeoutRef.current);
-    stopKidsSpeech();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   };
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col relative overflow-hidden">
       
       <header className="flex justify-between items-center p-6 bg-blue-600 text-white shadow-lg z-10 border-b-4 border-blue-700">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            stopSong();
-            router.push('/music');
-          }}
-          className="hover:bg-blue-700 font-bold"
-        >
+        <Button variant="ghost" onClick={() => router.push('/music')} className="hover:bg-blue-700 font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
         <div className="flex items-center gap-2">

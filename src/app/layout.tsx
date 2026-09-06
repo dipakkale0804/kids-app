@@ -4,7 +4,6 @@ import "./globals.css";
 import { GlobalHeader } from "@/components/layout/GlobalHeader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReferralTracker } from "@/components/layout/ReferralTracker";
-import { AudioRouteCleaner } from "@/components/layout/AudioRouteCleaner";
 const fredoka = Fredoka({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -33,7 +32,6 @@ export default function RootLayout({
       className={`${fredoka.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AudioRouteCleaner />
         <ReferralTracker />
         <GlobalHeader />
         <ErrorBoundary>
