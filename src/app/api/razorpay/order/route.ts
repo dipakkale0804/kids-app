@@ -19,14 +19,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse the requested plan
+    // Parse the requested plan and currency
     let body;
     try {
       body = await req.json();
     } catch (e) {
       body = {};
     }
-    const { plan = "yearly" } = body;
+    const { plan = "yearly", currency = "INR" } = body;
+    const selectedCurrency = String(currency).toUpperCase() === "USD" ? "USD" : "INR";
 
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       return NextResponse.json({ error: "Razorpay keys not configured" }, { status: 500 });
@@ -37,13 +38,25 @@ export async function POST(req: Request) {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // Set amount based on plan
-    const amount = plan === "monthly" ? 199 : 999;
+    // Subunit calculation:
+    // USD: 100 cents per dollar ($9.99 = 999 cents, $59.99 = 5999 cents)
+    // INR: 100 paise per rupee (₹199 = 19900 paise, ₹999 = 99900 paise)
+    let amountInSubunits: number;
+    if (selectedCurrency === "USD") {
+      amountInSubunits = plan === "monthly" ? 999 : 5999;
+    } else {
+      amountInSubunits = plan === "monthly" ? 19900 : 99900;
+    }
 
     const options = {
-      amount: amount * 100, // in paise
-      currency: "INR",
+      amount: amountInSubunits,
+      currency: selectedCurrency,
       receipt: `receipt_${decodedToken.uid.substring(0, 8)}_${Date.now()}`,
+      notes: {
+        userId: decodedToken.uid,
+        plan,
+        currency: selectedCurrency,
+      },
     };
 
     const order = await instance.orders.create(options);

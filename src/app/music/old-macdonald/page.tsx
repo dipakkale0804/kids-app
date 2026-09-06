@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mic2, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { speakKidsText, stopKidsSpeech } from "@/lib/speech";
 
 const ANIMALS = [
   { id: 'cow', name: 'Cow', icon: '🐄', sound: 'Moo moo!', color: 'bg-emerald-400' },
@@ -19,31 +20,43 @@ export default function OldMacDonaldPage() {
   const router = useRouter();
   const [activeAnimal, setActiveAnimal] = useState<typeof ANIMALS[0] | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const animTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // stop any current speech
-      const msg = new SpeechSynthesisUtterance(text);
-      msg.pitch = 1.4; // kid-like pitch
-      msg.rate = 0.9;
-      window.speechSynthesis.speak(msg);
-    }
+  useEffect(() => {
+    return () => {
+      if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current);
+      stopKidsSpeech();
+    };
+  }, []);
+
+  const speak = (text: string, onEndCallback?: () => void) => {
+    speakKidsText({
+      text,
+      rate: 0.78,
+      pitch: 1.0,
+      onEnd: () => {
+        setIsPlaying(false);
+        if (onEndCallback) onEndCallback();
+      },
+    });
   };
 
   const playAnimal = (animal: typeof ANIMALS[0]) => {
+    if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current);
     setActiveAnimal(animal);
     setIsPlaying(true);
     speak(`${animal.name} says... ${animal.sound}`);
     
-    // Stop playing animation after a few seconds
-    setTimeout(() => setIsPlaying(false), 3000);
+    // Stop playing animation after speech
+    animTimeoutRef.current = setTimeout(() => setIsPlaying(false), 3000);
   };
 
   const playFullSong = () => {
     if (!activeAnimal) return;
+    if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current);
     setIsPlaying(true);
     speak(`Old MacDonald had a farm, E I E I O! And on that farm he had a ${activeAnimal.name}, E I E I O! With a ${activeAnimal.sound} here, and a ${activeAnimal.sound} there!`);
-    setTimeout(() => setIsPlaying(false), 6000);
+    animTimeoutRef.current = setTimeout(() => setIsPlaying(false), 6000);
   };
 
   return (
@@ -57,7 +70,15 @@ export default function OldMacDonaldPage() {
       </div>
 
       <header className="flex justify-between items-center p-6 bg-orange-500 text-white shadow-lg z-10 border-b-4 border-orange-600">
-        <Button variant="ghost" onClick={() => router.push('/music')} className="hover:bg-orange-600 font-bold">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current);
+            stopKidsSpeech();
+            router.push('/music');
+          }}
+          className="hover:bg-orange-600 font-bold"
+        >
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </Button>
         <div className="flex items-center gap-2">

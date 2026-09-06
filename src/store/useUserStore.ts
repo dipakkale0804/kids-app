@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { auth, db } from "@/lib/firebase/client";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
 export interface UserBadge {
   id: string;
@@ -30,6 +30,8 @@ interface UserState {
   lastActive: Date | null;
   badges: UserBadge[];
   isPremium: boolean;
+  premiumExpiresAt: string | null;
+  plan: "monthly" | "yearly" | null;
   activityLogs: ActivityLog[];
   
   // Actions
@@ -38,10 +40,11 @@ interface UserState {
   addCoins: (amount: number) => void;
   unlockBadge: (badge: Omit<UserBadge, "unlockedAt">) => void;
   updateStreak: () => void;
-  setPremium: (status: boolean) => void;
+  setPremium: (status: boolean, expiresAt?: string | null, plan?: "monthly" | "yearly" | null) => void;
   resetProgress: () => void;
   syncToDb: () => void;
   fetchFromDb: () => Promise<void>;
+  subscribeToDb: () => (() => void) | undefined;
   logActivity: (activity: Omit<ActivityLog, "id" | "timestamp">) => void;
   clearOldGames: () => void; // New utility to remove deprecated games
   resetUser: () => void; // Clear state on logout
@@ -62,6 +65,8 @@ export const useUserStore = create<UserState>()(
       lastActive: null,
       badges: [],
       isPremium: false,
+      premiumExpiresAt: null,
+      plan: null,
       activityLogs: [],
 
       syncToDb: async () => {
@@ -75,7 +80,9 @@ export const useUserStore = create<UserState>()(
               stars: state.stars,
               coins: state.coins,
               activityLogs: state.activityLogs,
-              is_premium: state.isPremium
+              is_premium: state.isPremium,
+              premiumExpiresAt: state.premiumExpiresAt,
+              plan: state.plan,
             }, { merge: true });
           } catch (e) {
             console.error("Failed to sync to Firebase", e);
@@ -98,18 +105,95 @@ export const useUserStore = create<UserState>()(
                 !log.topic.toLowerCase().includes("dino")
               );
               
+              const hasPremiumFlag = data.is_premium === true || data.isPremium === true;
+              let finalExpiresAt = data.premiumExpiresAt || null;
+              const plan = data.plan || "monthly";
+
+              // Self-heal: If premium was active previously without premiumExpiresAt, grant full validity (30d/365d)
+              if (hasPremiumFlag && !finalExpiresAt) {
+                const baseDate = data.premiumActivatedAt ? new Date(data.premiumActivatedAt) : new Date();
+                const days = plan === "yearly" ? 365 : 30;
+                finalExpiresAt = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+                setDoc(docRef, { premiumExpiresAt: finalExpiresAt, plan }, { merge: true }).catch(console.error);
+              }
+
+              const expiresAtDate = finalExpiresAt ? new Date(finalExpiresAt) : null;
+              const isExpired = expiresAtDate ? expiresAtDate.getTime() <= Date.now() : false;
+              const isPremiumActive = hasPremiumFlag && !isExpired;
+
+              // If expired, automatically update Firestore
+              if (hasPremiumFlag && isExpired && data.is_premium !== false) {
+                setDoc(docRef, { is_premium: false, isPremium: false, subscriptionStatus: "expired" }, { merge: true }).catch(console.error);
+              }
+
               set({
                 xp: data.xp || get().xp,
                 level: data.level || get().level,
                 stars: data.stars || get().stars,
                 coins: data.coins || get().coins,
                 activityLogs: logs,
-                isPremium: data.is_premium === true || data.isPremium === true
+                isPremium: isPremiumActive,
+                premiumExpiresAt: finalExpiresAt,
+                plan: plan,
               });
             }
           } catch (e) {
             console.error("Failed to fetch from Firebase", e);
           }
+        }
+      },
+
+      subscribeToDb: () => {
+        const user = auth.currentUser;
+        if (!user) return undefined;
+
+        try {
+          const docRef = doc(db, "profiles", user.uid);
+          return onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              let logs = data.activityLogs || [];
+              logs = logs.filter((log: ActivityLog) => 
+                !log.topic.toLowerCase().includes("racer") && 
+                !log.topic.toLowerCase().includes("dino")
+              );
+              
+              const hasPremiumFlag = data.is_premium === true || data.isPremium === true;
+              let finalExpiresAt = data.premiumExpiresAt || null;
+              const plan = data.plan || "monthly";
+
+              if (hasPremiumFlag && !finalExpiresAt) {
+                const baseDate = data.premiumActivatedAt ? new Date(data.premiumActivatedAt) : new Date();
+                const days = plan === "yearly" ? 365 : 30;
+                finalExpiresAt = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+                setDoc(docRef, { premiumExpiresAt: finalExpiresAt, plan }, { merge: true }).catch(console.error);
+              }
+
+              const expiresAtDate = finalExpiresAt ? new Date(finalExpiresAt) : null;
+              const isExpired = expiresAtDate ? expiresAtDate.getTime() <= Date.now() : false;
+              const isPremiumActive = hasPremiumFlag && !isExpired;
+
+              if (hasPremiumFlag && isExpired && data.is_premium !== false) {
+                setDoc(docRef, { is_premium: false, isPremium: false, subscriptionStatus: "expired" }, { merge: true }).catch(console.error);
+              }
+
+              set({
+                xp: data.xp || get().xp,
+                level: data.level || get().level,
+                stars: data.stars || get().stars,
+                coins: data.coins || get().coins,
+                activityLogs: logs,
+                isPremium: isPremiumActive,
+                premiumExpiresAt: finalExpiresAt,
+                plan: plan,
+              });
+            }
+          }, (err) => {
+            console.error("Realtime subscription error:", err);
+          });
+        } catch (err) {
+          console.error("Failed to setup snapshot listener:", err);
+          return undefined;
         }
       },
 
@@ -154,7 +238,14 @@ export const useUserStore = create<UserState>()(
         get().syncToDb();
       },
 
-      setPremium: (status) => set({ isPremium: status }),
+      setPremium: (status, expiresAt = null, plan = null) => {
+        set({ 
+          isPremium: status,
+          premiumExpiresAt: expiresAt,
+          plan: plan
+        });
+        get().syncToDb();
+      },
 
       unlockBadge: (badge) => set((state) => {
         if (state.badges.find(b => b.id === badge.id)) return state;
@@ -211,6 +302,8 @@ export const useUserStore = create<UserState>()(
           lastActive: null,
           badges: [],
           isPremium: false,
+          premiumExpiresAt: null,
+          plan: null,
           activityLogs: []
         });
       }

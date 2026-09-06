@@ -114,5 +114,5 @@ export function useGameSounds() {
     } catch (e) {}
   }, []);
 
-  return { playCorrect, playIncorrect, playPop, playLevelUp };
+  return { playCorrect, playIncorrect, playPop, playLevelUp, playCelebration: playLevelUp };
 }

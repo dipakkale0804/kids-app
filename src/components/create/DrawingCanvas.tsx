@@ -1,69 +1,234 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { 
+  Eraser, PaintBucket, Undo2, Trash2, Download, 
+  Sparkles, Wand2, Star, Printer, Lock, Image as ImageIcon
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Eraser, Pencil, Undo2, Save, Trash2, Square, Circle, Minus, PaintBucket, Download } from "lucide-react";
+import { useUserStore } from "@/store/useUserStore";
+import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
+import confetti from "canvas-confetti";
 
-const COLORS = [
-  "#000000", "#7F7F7F", "#880015", "#ED1C24", "#FF7F27", "#FFF200", "#22B14C", "#00A2E8", "#3F48CC", "#A349A4",
-  "#FFFFFF", "#C3C3C3", "#B97A57", "#FFAEC9", "#FFC90E", "#EFE4B0", "#B5E61D", "#99D9EA", "#7092BE", "#C8BFE7"
+const COLOR_PALETTE = [
+  "#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4",
+  "#3b82f6", "#6366f1", "#a855f7", "#ec4899", "#1e293b",
+  "#ffffff", "#94a3b8", "#78350f", "#fbcfe8", "#fde047"
 ];
 
-type Tool = "pencil" | "eraser" | "rectangle" | "circle" | "line" | "fill";
+interface Stencil {
+  id: string;
+  name: string;
+  emoji: string;
+  isPremium: boolean;
+  svgPath: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
+}
+
+const STENCILS: Stencil[] = [
+  {
+    id: "blank",
+    name: "Blank Canvas",
+    emoji: "📄",
+    isPremium: false,
+    svgPath: () => {}
+  },
+  {
+    id: "rocket",
+    name: "Space Rocket",
+    emoji: "🚀",
+    isPremium: false,
+    svgPath: (ctx, w, h) => {
+      const cx = w / 2;
+      const cy = h / 2 - 20;
+      ctx.save();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#334155";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      // Rocket Body
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 140);
+      ctx.bezierCurveTo(cx + 60, cy - 60, cx + 60, cy + 80, cx, cy + 100);
+      ctx.bezierCurveTo(cx - 60, cy + 80, cx - 60, cy - 60, cx, cy - 140);
+      ctx.stroke();
+
+      // Window
+      ctx.beginPath();
+      ctx.arc(cx, cy - 20, 28, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Fins
+      ctx.beginPath();
+      ctx.moveTo(cx - 52, cy + 30);
+      ctx.lineTo(cx - 100, cy + 95);
+      ctx.lineTo(cx - 40, cy + 90);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx + 52, cy + 30);
+      ctx.lineTo(cx + 100, cy + 95);
+      ctx.lineTo(cx + 40, cy + 90);
+      ctx.stroke();
+
+      // Flame
+      ctx.beginPath();
+      ctx.moveTo(cx - 25, cy + 100);
+      ctx.lineTo(cx, cy + 150);
+      ctx.lineTo(cx + 25, cy + 100);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  },
+  {
+    id: "dino",
+    name: "Baby T-Rex",
+    emoji: "🦖",
+    isPremium: false,
+    svgPath: (ctx, w, h) => {
+      const cx = w / 2 - 20;
+      const cy = h / 2;
+      ctx.save();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#334155";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      // Head & Body outline
+      ctx.beginPath();
+      ctx.arc(cx + 40, cy - 70, 45, 0, Math.PI * 2); // Head
+      ctx.stroke();
+
+      // Eye
+      ctx.beginPath();
+      ctx.arc(cx + 55, cy - 80, 8, 0, Math.PI * 2);
+      ctx.fillStyle = "#334155";
+      ctx.fill();
+
+      // Body & Tail
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 20, 70, 50, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Tail
+      ctx.beginPath();
+      ctx.moveTo(cx - 65, cy + 10);
+      ctx.quadraticCurveTo(cx - 130, cy - 10, cx - 140, cy + 40);
+      ctx.quadraticCurveTo(cx - 110, cy + 50, cx - 60, cy + 45);
+      ctx.stroke();
+
+      // Feet
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, cy + 70);
+      ctx.lineTo(cx - 20, cy + 115);
+      ctx.lineTo(cx - 5, cy + 115);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx + 20, cy + 70);
+      ctx.lineTo(cx + 20, cy + 115);
+      ctx.lineTo(cx + 35, cy + 115);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  },
+  {
+    id: "unicorn",
+    name: "Magic Unicorn",
+    emoji: "🦄",
+    isPremium: true,
+    svgPath: (ctx, w, h) => {
+      const cx = w / 2;
+      const cy = h / 2;
+      ctx.save();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#334155";
+      ctx.lineCap = "round";
+
+      // Head
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 20, 60, 40, -0.2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Horn
+      ctx.beginPath();
+      ctx.moveTo(cx + 30, cy - 50);
+      ctx.lineTo(cx + 70, cy - 130);
+      ctx.lineTo(cx + 10, cy - 55);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Mane
+      ctx.beginPath();
+      ctx.arc(cx - 40, cy - 50, 30, 0, Math.PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx - 50, cy, 30, 0, Math.PI);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+];
+
+type DrawingTool = "brush" | "glow" | "rainbow" | "eraser";
 
 export function DrawingCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const [tool, setTool] = useState<DrawingTool>("rainbow");
+  const [color, setColor] = useState("#a855f7");
+  const [brushSize, setBrushSize] = useState(14);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [color, setColor] = useState("#000000");
-  const [lineWidth, setLineWidth] = useState(5);
-  const [tool, setTool] = useState<Tool>("pencil");
-  
+  const [selectedStencil, setSelectedStencil] = useState<string>("rocket");
+  const [rainbowHue, setRainbowHue] = useState(0);
   const [history, setHistory] = useState<ImageData[]>([]);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [snapshot, setSnapshot] = useState<ImageData | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const { displayName, isPremium } = useUserStore();
+
+  const activeStencilObj = STENCILS.find(s => s.id === selectedStencil) || STENCILS[0];
 
   // Initialize Canvas
-  useEffect(() => {
-    const resizeCanvas = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (!canvas || !container) return;
-      
-      const ctx = canvas.getContext("2d");
-      const currentData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
-      
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-      
-      if (ctx) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        
-        if (currentData && canvas.width > 0 && canvas.height > 0) {
-          try { ctx.putImageData(currentData, 0, 0); } catch (e) {}
-        } else {
-          saveToHistory(canvas);
-        }
-      }
-    };
-    
-    setTimeout(resizeCanvas, 100);
-    window.addEventListener("resize", resizeCanvas);
-    return () => window.removeEventListener("resize", resizeCanvas);
-  }, []);
+  const setupCanvas = () => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
-  const saveToHistory = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory(prev => {
-      const newHistory = [...prev, data];
-      return newHistory.length > 30 ? newHistory.slice(1) : newHistory;
-    });
+
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw chosen stencil
+    if (activeStencilObj.svgPath) {
+      activeStencilObj.svgPath(ctx, canvas.width, canvas.height);
+    }
+
+    // Save initial state to history
+    saveState();
+  };
+
+  useEffect(() => {
+    setupCanvas();
+    window.addEventListener("resize", setupCanvas);
+    return () => window.removeEventListener("resize", setupCanvas);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStencil]);
+
+  const saveState = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    setHistory(prev => [...prev.slice(-20), imgData]);
   };
 
   const undo = () => {
@@ -72,316 +237,316 @@ export function DrawingCanvas() {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    const previousState = history[history.length - 2];
-    ctx.putImageData(previousState, 0, 0);
-    setHistory(prev => prev.slice(0, -1));
+    const prev = history[history.length - 2];
+    ctx.putImageData(prev, 0, 0);
+    setHistory(old => old.slice(0, -1));
   };
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    saveToHistory(canvas);
+    setupCanvas();
   };
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  };
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
 
-  // Basic flood fill (BFS)
-  const floodFill = (ctx: CanvasRenderingContext2D, startX: number, startY: number, fillColor: string) => {
-    const canvas = ctx.canvas;
-    const w = canvas.width;
-    const h = canvas.height;
-    const imageData = ctx.getImageData(0, 0, w, h);
-    const data = imageData.data;
-    
-    // Parse target color
-    const hexToRgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-        a: 255
-      } : { r: 0, g: 0, b: 0, a: 255 };
-    };
-    const fillRgb = hexToRgb(fillColor);
-    
-    const getPixelIdx = (x: number, y: number) => (y * w + x) * 4;
-    
-    const startIdx = getPixelIdx(startX, startY);
-    const startR = data[startIdx];
-    const startG = data[startIdx + 1];
-    const startB = data[startIdx + 2];
-    const startA = data[startIdx + 3];
+    let clientX = 0;
+    let clientY = 0;
 
-    // If clicking on same color, do nothing
-    if (startR === fillRgb.r && startG === fillRgb.g && startB === fillRgb.b) return;
-
-    const matchStartColor = (idx: number) => {
-      return data[idx] === startR && data[idx+1] === startG && data[idx+2] === startB && data[idx+3] === startA;
-    };
-
-    const colorPixel = (idx: number) => {
-      data[idx] = fillRgb.r;
-      data[idx+1] = fillRgb.g;
-      data[idx+2] = fillRgb.b;
-      data[idx+3] = fillRgb.a;
-    };
-
-    const pixelStack = [[startX, startY]];
-
-    while(pixelStack.length > 0) {
-      const pos = pixelStack.pop();
-      if (!pos) continue;
-      let [x, y] = pos;
-      let idx = getPixelIdx(x, y);
-
-      while(y >= 0 && matchStartColor(idx)) {
-        y--;
-        idx -= w * 4;
-      }
-      
-      idx += w * 4;
-      y++;
-      
-      let reachLeft = false;
-      let reachRight = false;
-
-      while(y < h && matchStartColor(idx)) {
-        colorPixel(idx);
-
-        if (x > 0) {
-          if (matchStartColor(idx - 4)) {
-            if (!reachLeft) {
-              pixelStack.push([x - 1, y]);
-              reachLeft = true;
-            }
-          } else if (reachLeft) {
-            reachLeft = false;
-          }
-        }
-
-        if (x < w - 1) {
-          if (matchStartColor(idx + 4)) {
-            if (!reachRight) {
-              pixelStack.push([x + 1, y]);
-              reachRight = true;
-            }
-          } else if (reachRight) {
-            reachRight = false;
-          }
-        }
-
-        y++;
-        idx += w * 4;
-      }
+    if ("touches" in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
     }
-    
-    ctx.putImageData(imageData, 0, 0);
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
+    };
   };
 
-  const startDrawingFn = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDrawing(true);
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getCoordinates(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const stopDrawing = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      saveState();
+    }
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
-    
-    const { x, y } = getCoordinates(e);
-    
-    if (tool === "fill") {
-      floodFill(ctx, Math.floor(x), Math.floor(y), color);
-      saveToHistory(canvas);
-      return;
-    }
 
-    setIsDrawing(true);
-    setStartPos({ x, y });
-    setSnapshot(ctx.getImageData(0, 0, canvas.width, canvas.height));
-
-    if (tool === "pencil" || tool === "eraser") {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    }
-  };
-
-  const drawFn = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    if (!isDrawing) return;
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || !snapshot) return;
-    
     const { x, y } = getCoordinates(e);
 
-    if (tool === "pencil" || tool === "eraser") {
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = tool === "eraser" ? "#ffffff" : color;
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
-    } else {
-      // Shapes - restore previous snapshot before drawing new size
-      ctx.putImageData(snapshot, 0, 0);
-      ctx.beginPath();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = brushSize;
+
+    if (tool === "eraser") {
+      ctx.strokeStyle = "#ffffff";
+      ctx.shadowBlur = 0;
+    } else if (tool === "glow") {
       ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-
-      if (tool === "rectangle") {
-        ctx.strokeRect(startPos.x, startPos.y, x - startPos.x, y - startPos.y);
-      } else if (tool === "circle") {
-        const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
-        ctx.arc(startPos.x, startPos.y, radius, 0, 2 * Math.PI);
-        ctx.stroke();
-      } else if (tool === "line") {
-        ctx.moveTo(startPos.x, startPos.y);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-      }
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 18;
+    } else if (tool === "rainbow") {
+      const nextHue = (rainbowHue + 4) % 360;
+      setRainbowHue(nextHue);
+      const rainbowColor = `hsl(${nextHue}, 90%, 55%)`;
+      ctx.strokeStyle = rainbowColor;
+      ctx.shadowColor = rainbowColor;
+      ctx.shadowBlur = 12;
+    } else {
+      ctx.strokeStyle = color;
+      ctx.shadowBlur = 0;
     }
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
   };
 
-  const stopDrawingFn = () => {
-    if (isDrawing && canvasRef.current) {
-      setIsDrawing(false);
-      saveToHistory(canvasRef.current);
-    }
-  };
-
-  const downloadCanvas = () => {
+  const downloadCertificate = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+    // Create a high-res certificate canvas
+    const certCanvas = document.createElement("canvas");
+    certCanvas.width = 1200;
+    certCanvas.height = 900;
+    const certCtx = certCanvas.getContext("2d");
+    if (!certCtx) return;
+
+    // Background gradient border
+    certCtx.fillStyle = "#8b5cf6";
+    certCtx.fillRect(0, 0, 1200, 900);
+
+    // Inner Parchment
+    certCtx.fillStyle = "#faf5ff";
+    certCtx.fillRect(30, 30, 1140, 840);
+
+    // Gold Ribbon Title
+    certCtx.fillStyle = "#7c3aed";
+    certCtx.font = "bold 44px sans-serif";
+    certCtx.textAlign = "center";
+    certCtx.fillText("🌟 OFFICIAL MASTERPIECE AWARD 🌟", 600, 100);
+
+    certCtx.font = "bold 26px sans-serif";
+    certCtx.fillStyle = "#64748b";
+    certCtx.fillText(`Created with pride by Master Artist: ${displayName || "Young Creator"}`, 600, 145);
+
+    // Embed Drawing with border
+    certCtx.drawImage(canvas, 100, 180, 1000, 600);
+    certCtx.strokeStyle = "#c084fc";
+    certCtx.lineWidth = 10;
+    certCtx.strokeRect(100, 180, 1000, 600);
+
+    // Footer
+    certCtx.font = "bold 22px sans-serif";
+    certCtx.fillStyle = "#9333ea";
+    certCtx.fillText("Certified for Family Refrigerator Display! 🎨", 600, 830);
+
     const link = document.createElement("a");
-    link.download = `KidsLearn-Paint-${Date.now()}.png`;
-    link.href = canvas.toDataURL();
+    link.download = `${displayName || "Kids"}_Masterpiece_Certificate.png`;
+    link.href = certCanvas.toDataURL("image/png");
     link.click();
   };
 
+  const handleStencilSelect = (stencil: Stencil) => {
+    if (stencil.isPremium && !isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    setSelectedStencil(stencil.id);
+  };
+
   return (
-    <div className="flex flex-col w-full max-w-6xl mx-auto h-[85vh] bg-slate-200 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 shadow-2xl rounded-sm overflow-hidden select-none">
-      
-      {/* Top Toolbar (MS Paint Style) */}
-      <div className="bg-slate-100 dark:bg-zinc-950 border-b border-slate-300 dark:border-zinc-800 p-2 flex flex-wrap gap-4 items-center shadow-sm">
-        
-        {/* Tools Section */}
-        <div className="flex flex-col gap-1 border-r border-slate-300 dark:border-zinc-800 pr-4">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-center">Tools</span>
-          <div className="flex gap-1">
-            <ToolBtn icon={<Pencil size={18}/>} active={tool==="pencil"} onClick={()=>setTool("pencil")} title="Pencil" />
-            <ToolBtn icon={<PaintBucket size={18}/>} active={tool==="fill"} onClick={()=>setTool("fill")} title="Fill with color" />
-            <ToolBtn icon={<Eraser size={18}/>} active={tool==="eraser"} onClick={()=>setTool("eraser")} title="Eraser" />
-          </div>
+    <div className="flex flex-col w-full max-w-6xl mx-auto h-[calc(100vh-120px)] bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl border-4 border-purple-200 dark:border-purple-900/60 overflow-hidden">
+      {/* Top Toolbar */}
+      <div className="p-4 bg-purple-50/70 dark:bg-zinc-800/70 border-b border-purple-100 dark:border-zinc-700 flex flex-wrap items-center justify-between gap-4">
+        {/* Stencil Picker */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+          <span className="text-xs font-black uppercase text-purple-600 dark:text-purple-400 mr-1 flex items-center gap-1">
+            <ImageIcon className="w-3.5 h-3.5" /> Stencils:
+          </span>
+          {STENCILS.map(s => {
+            const isSelected = selectedStencil === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => handleStencilSelect(s)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs transition-all ${
+                  isSelected
+                    ? "bg-purple-600 text-white shadow-md scale-105"
+                    : "bg-white dark:bg-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-purple-100"
+                }`}
+              >
+                <span>{s.emoji}</span>
+                <span>{s.name}</span>
+                {s.isPremium && !isPremium && <Lock className="w-3 h-3 text-yellow-500 ml-0.5" />}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Shapes Section */}
-        <div className="flex flex-col gap-1 border-r border-slate-300 dark:border-zinc-800 pr-4">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-center">Shapes</span>
-          <div className="flex gap-1">
-            <ToolBtn icon={<Minus size={18}/>} active={tool==="line"} onClick={()=>setTool("line")} title="Line" />
-            <ToolBtn icon={<Square size={18}/>} active={tool==="rectangle"} onClick={()=>setTool("rectangle")} title="Rectangle" />
-            <ToolBtn icon={<Circle size={18}/>} active={tool==="circle"} onClick={()=>setTool("circle")} title="Circle" />
-          </div>
-        </div>
-
-        {/* Size Section */}
-        <div className="flex flex-col gap-1 border-r border-slate-300 dark:border-zinc-800 pr-4">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-center">Size</span>
-          <div className="flex flex-col gap-1 w-16 px-1">
-            <input 
-              type="range" 
-              min="1" max="50" 
-              value={lineWidth} 
-              onChange={(e) => setLineWidth(parseInt(e.target.value))}
-              className="w-full accent-blue-500"
-            />
-            <span className="text-xs text-center">{lineWidth}px</span>
-          </div>
-        </div>
-
-        {/* Colors Section */}
-        <div className="flex flex-col gap-1 border-r border-slate-300 dark:border-zinc-800 pr-4">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-center">Colors</span>
-          <div className="flex gap-2 items-center">
-            <div className="w-10 h-10 border-2 border-slate-400 bg-white shadow-inner flex items-center justify-center p-1 rounded-sm">
-              <div className="w-full h-full border border-slate-300" style={{ backgroundColor: color }} />
-            </div>
-            <div className="grid grid-cols-10 gap-1 w-[220px]">
-              {COLORS.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className="w-5 h-5 border border-slate-400 hover:ring-1 ring-blue-500"
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-            <input 
-              type="color" 
-              value={color} 
-              onChange={(e) => setColor(e.target.value)}
-              className="w-8 h-8 ml-2 cursor-pointer border-0 p-0"
-              title="Custom Color"
-            />
-          </div>
-        </div>
-
-        {/* Actions Section */}
-        <div className="flex flex-col gap-1 ml-auto pr-2">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-center">Actions</span>
-          <div className="flex gap-1">
-            <ToolBtn icon={<Undo2 size={18}/>} onClick={undo} disabled={history.length <= 1} title="Undo" />
-            <ToolBtn icon={<Trash2 size={18}/>} onClick={clearCanvas} title="Clear" />
-            <ToolBtn icon={<Download size={18}/>} onClick={downloadCanvas} title="Save" />
-          </div>
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 ml-auto">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={undo}
+            disabled={history.length <= 1}
+            className="rounded-full font-bold border-2"
+            title="Undo"
+          >
+            <Undo2 className="w-4 h-4 mr-1" /> Undo
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={clearCanvas}
+            className="rounded-full font-bold border-2 text-rose-600 hover:text-rose-700"
+            title="Clear"
+          >
+            <Trash2 className="w-4 h-4 mr-1" /> Clear
+          </Button>
+          <Button
+            size="sm"
+            onClick={downloadCertificate}
+            className="rounded-full font-black bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md"
+            title="Print Masterpiece"
+          >
+            <Printer className="w-4 h-4 mr-1" /> Print for Fridge
+          </Button>
         </div>
       </div>
 
-      {/* Canvas Area Container */}
-      <div className="flex-1 bg-slate-300 dark:bg-zinc-800 p-2 overflow-auto relative">
-        {/* The actual canvas wrapper with shadow like MS Paint */}
-        <div 
-          ref={containerRef} 
-          className="bg-white shadow-md relative touch-none mx-auto border border-slate-400"
-          style={{ width: "100%", maxWidth: "1200px", height: "100%", minHeight: "600px" }}
-        >
+      {/* Main Studio Area */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* Left Side Tool Controls */}
+        <div className="p-3 md:p-4 bg-slate-50 dark:bg-zinc-800/50 border-r border-slate-200 dark:border-zinc-700 flex md:flex-col items-center justify-between md:justify-start gap-3 shrink-0 overflow-x-auto">
+          {/* Tool Modes */}
+          <div className="flex md:flex-col gap-2">
+            <button
+              onClick={() => setTool("rainbow")}
+              className={`p-3 rounded-2xl flex items-center justify-center font-bold text-xs transition-all ${
+                tool === "rainbow"
+                  ? "bg-gradient-to-br from-pink-500 to-yellow-400 text-white shadow-lg scale-105"
+                  : "bg-white dark:bg-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+              }`}
+              title="Magic Rainbow Brush"
+            >
+              <Sparkles className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setTool("glow")}
+              className={`p-3 rounded-2xl flex items-center justify-center font-bold text-xs transition-all ${
+                tool === "glow"
+                  ? "bg-purple-600 text-white shadow-lg scale-105 ring-2 ring-purple-400"
+                  : "bg-white dark:bg-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+              }`}
+              title="Neon Glow Wand"
+            >
+              <Wand2 className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setTool("brush")}
+              className={`p-3 rounded-2xl flex items-center justify-center font-bold text-xs transition-all ${
+                tool === "brush"
+                  ? "bg-blue-600 text-white shadow-lg scale-105"
+                  : "bg-white dark:bg-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+              }`}
+              title="Solid Color Pen"
+            >
+              <PaintBucket className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setTool("eraser")}
+              className={`p-3 rounded-2xl flex items-center justify-center font-bold text-xs transition-all ${
+                tool === "eraser"
+                  ? "bg-rose-500 text-white shadow-lg scale-105"
+                  : "bg-white dark:bg-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+              }`}
+              title="Eraser"
+            >
+              <Eraser className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Brush Size Slider */}
+          <div className="flex md:flex-col items-center gap-1.5 mt-2">
+            <span className="text-[10px] font-black uppercase text-slate-400">Size</span>
+            <input
+              type="range"
+              min="4"
+              max="45"
+              value={brushSize}
+              onChange={(e) => setBrushSize(parseInt(e.target.value))}
+              className="accent-purple-600 w-24 md:w-20 cursor-pointer"
+            />
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{brushSize}px</span>
+          </div>
+
+          {/* Color Palette */}
+          <div className="grid grid-cols-5 md:grid-cols-2 gap-1.5 mt-2">
+            {COLOR_PALETTE.map((c) => (
+              <button
+                key={c}
+                onClick={() => {
+                  setColor(c);
+                  if (tool === "eraser") setTool("glow");
+                }}
+                className={`w-6 h-6 rounded-full border-2 transition-transform ${
+                  color === c ? "scale-125 border-slate-900 shadow-md" : "border-white hover:scale-110"
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Main Canvas Workspace */}
+        <div ref={containerRef} className="flex-1 w-full h-full relative bg-slate-100 dark:bg-zinc-950 touch-none">
           <canvas
             ref={canvasRef}
-            onMouseDown={startDrawingFn}
-            onMouseMove={drawFn}
-            onMouseUp={stopDrawingFn}
-            onMouseOut={stopDrawingFn}
-            onTouchStart={startDrawingFn}
-            onTouchMove={drawFn}
-            onTouchEnd={stopDrawingFn}
-            className={`absolute inset-0 w-full h-full ${tool === 'fill' ? 'cursor-cell' : 'cursor-crosshair'}`}
+            onMouseDown={startDrawing}
+            onMouseUp={stopDrawing}
+            onMouseMove={draw}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchEnd={stopDrawing}
+            onTouchMove={draw}
+            className="w-full h-full cursor-crosshair"
           />
         </div>
       </div>
-    </div>
-  );
-}
 
-function ToolBtn({ icon, active, onClick, disabled, title }: any) {
-  return (
-    <Button 
-      variant="ghost" 
-      size="icon"
-      title={title}
-      disabled={disabled}
-      className={`h-8 w-8 rounded-sm ${active ? "bg-blue-100 border border-blue-400 text-blue-700" : "hover:bg-slate-200 border border-transparent text-slate-700 dark:text-slate-300"}`}
-      onClick={onClick}
-    >
-      {icon}
-    </Button>
+      <PremiumLockModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
+    </div>
   );
 }

@@ -15,12 +15,64 @@ import {
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/useUserStore";
 import { formatDistanceToNow } from "date-fns";
+import { PremiumLockModal } from "@/components/ui/PremiumLockModal";
 
 export default function ParentDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { displayName, isPremium, activityLogs, level, xp } = useUserStore();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const { displayName, isPremium, premiumExpiresAt, plan, activityLogs, level, xp } = useUserStore();
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Real-time 1-second timer tick so remaining time updates live on screen
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Subscription Days Remaining Calculation (Live real-time ticker)
+  const { daysRemaining, formattedTimeRemaining, isExpiringSoon, isExpired } = useMemo(() => {
+    if (!premiumExpiresAt) {
+      return { daysRemaining: 0, formattedTimeRemaining: "No active plan", isExpiringSoon: false, isExpired: false };
+    }
+    const expires = new Date(premiumExpiresAt).getTime();
+    const diff = expires - currentTime;
+
+    if (diff <= 0) {
+      return {
+        daysRemaining: 0,
+        formattedTimeRemaining: "Plan Expired",
+        isExpiringSoon: false,
+        isExpired: true,
+      };
+    }
+
+    const totalHours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    let displayStr = "";
+    if (days > 1) {
+      displayStr = `${days} days left`;
+    } else if (days === 1) {
+      displayStr = `1 day, ${hours}h left`;
+    } else if (hours > 0) {
+      displayStr = `${hours}h ${minutes}m left`;
+    } else {
+      displayStr = `${Math.max(1, minutes)} mins left`;
+    }
+
+    return {
+      daysRemaining: days,
+      formattedTimeRemaining: displayStr,
+      isExpiringSoon: days <= 5,
+      isExpired: false,
+    };
+  }, [premiumExpiresAt, currentTime]);
 
   // Dynamic Data Aggregation
   const { weeklyData, accuracyData, totalTime, avgAccuracy, strengths, focuses, recentLogs } = useMemo(() => {
@@ -93,18 +145,23 @@ export default function ParentDashboard() {
   }, [activityLogs]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubSnapshot: (() => void) | undefined;
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (!user) {
         router.push("/auth");
       } else {
         // Purge old deleted games from cache
         useUserStore.getState().clearOldGames();
-        // Fetch absolute latest real-time data from DB to sync across devices
-        await useUserStore.getState().fetchFromDb();
+        // Setup live real-time listener to Firestore
+        unsubSnapshot = useUserStore.getState().subscribeToDb();
         setLoading(false);
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubSnapshot) unsubSnapshot();
+    };
   }, [router]);
 
   if (loading) {
@@ -152,72 +209,57 @@ export default function ParentDashboard() {
           </button>
         </nav>
 
-        {!isPremium && (
+        {isPremium ? (
+          <div className="mt-auto bg-gradient-to-br from-purple-900/40 to-purple-800/20 border-2 border-purple-500/40 p-5 rounded-3xl shadow-lg relative overflow-hidden hidden lg:block">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-600 text-white shadow-sm flex items-center gap-1">
+                👑 {plan === "yearly" ? "Yearly PRO" : "Monthly PRO"}
+              </span>
+              <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                Active
+              </span>
+            </div>
+            <h4 className="font-black text-slate-900 dark:text-white mb-1 text-lg">PRO Membership</h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 font-medium">
+              <span className={`flex items-center gap-1.5 font-bold ${isExpiringSoon ? 'text-amber-500' : 'text-emerald-500'}`}>
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                {formattedTimeRemaining}
+              </span>
+            </p>
+            <Button 
+              onClick={() => setShowPremiumModal(true)}
+              size="sm"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow transition-transform active:scale-95"
+            >
+              Extend / Renew Plan
+            </Button>
+          </div>
+        ) : isExpired ? (
+          <div className="mt-auto bg-gradient-to-br from-red-500/20 to-orange-500/20 border-2 border-red-500/40 p-5 rounded-3xl shadow-lg relative overflow-hidden hidden lg:block">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
+                Plan Expired
+              </span>
+            </div>
+            <h4 className="font-black text-slate-900 dark:text-white mb-1 text-lg">Renew PRO</h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 font-medium">
+              Your {plan === "yearly" ? "yearly" : "monthly"} plan has ended. Renew to unlock unlimited games.
+            </p>
+            <Button 
+              onClick={() => setShowPremiumModal(true)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl shadow-xl transition-transform active:scale-95"
+            >
+              Renew Subscription
+            </Button>
+          </div>
+        ) : (
           <div className="mt-auto bg-gradient-to-br from-amber-200 to-orange-400 p-5 rounded-3xl shadow-lg relative overflow-hidden hidden lg:block">
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
             <h4 className="font-black text-orange-950 mb-1 text-lg drop-shadow-sm">Upgrade to PRO</h4>
             <p className="text-sm text-orange-950/80 font-bold mb-4 leading-tight">Unlock advanced analytics and ad-free games.</p>
             <Button 
-              onClick={async () => {
-                // 1. Fetch Order ID from backend
-                const res = await fetch('/api/checkout', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: auth.currentUser?.uid, email: auth.currentUser?.email })
-                });
-                const order = await res.json();
-                
-                if (order.id) {
-                  // 2. Load Razorpay script
-                  const script = document.createElement("script");
-                  script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                  script.onload = () => {
-                    const options = {
-                      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Use public key from env
-                      amount: order.amount,
-                      currency: order.currency,
-                      name: "KidsLearn Arcade",
-                      description: "Upgrade to PRO (Lifetime Access)",
-                      order_id: order.id,
-                      handler: async function (response: any) {
-                        try {
-                          const verifyRes = await fetch('/api/verify-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              razorpay_order_id: response.razorpay_order_id,
-                              razorpay_payment_id: response.razorpay_payment_id,
-                              razorpay_signature: response.razorpay_signature,
-                              userId: auth.currentUser?.uid
-                            })
-                          });
-                          const result = await verifyRes.json();
-                          if (result.success) {
-                            alert("Payment successful! Welcome to PRO!");
-                            useUserStore.getState().setPremium(true); // Update local state
-                          } else {
-                            alert("Payment verification failed.");
-                          }
-                        } catch (e) {
-                          alert("Error verifying payment.");
-                        }
-                      },
-                      prefill: {
-                        name: displayName,
-                        email: auth.currentUser?.email || "",
-                      },
-                      theme: {
-                        color: "#9333ea"
-                      }
-                    };
-                    const rzp = new (window as any).Razorpay(options);
-                    rzp.open();
-                  };
-                  document.body.appendChild(script);
-                } else {
-                  alert("Failed to create order. Make sure Razorpay keys are in .env.local!");
-                }
-              }}
+              onClick={() => setShowPremiumModal(true)}
               className="w-full bg-orange-900 hover:bg-orange-950 text-white font-black rounded-2xl shadow-xl transition-transform active:scale-95"
             >
               Upgrade Now
@@ -290,6 +332,55 @@ export default function ParentDashboard() {
               </div>
             </div>
           </header>
+
+          {/* Subscription Alerts */}
+          {isPremium && isExpiringSoon && (
+            <div className="mb-8 p-4 md:p-5 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-amber-950 dark:text-amber-200 text-base">
+                    Subscription Expiring Soon ({formattedTimeRemaining})
+                  </h4>
+                  <p className="text-xs text-amber-900/80 dark:text-amber-300/80 font-medium">
+                    Your {plan === "yearly" ? "Yearly" : "Monthly"} PRO plan will expire soon. Renew now to avoid losing access to games and reports.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowPremiumModal(true)} 
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shrink-0 shadow-md px-5"
+              >
+                Renew Plan
+              </Button>
+            </div>
+          )}
+
+          {!isPremium && isExpired && (
+            <div className="mb-8 p-4 md:p-5 rounded-3xl bg-red-500/10 border-2 border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/20 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-red-950 dark:text-red-200 text-base">
+                    Your PRO Subscription Has Expired
+                  </h4>
+                  <p className="text-xs text-red-900/80 dark:text-red-300/80 font-medium">
+                    Premium games and detailed analytics are currently locked. Renew your plan to reactivate instant access.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowPremiumModal(true)} 
+                className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shrink-0 shadow-md px-5"
+              >
+                Renew Now
+              </Button>
+            </div>
+          )}
 
           {activeTab === "overview" && (
             <div className="flex flex-col gap-8">
@@ -445,6 +536,8 @@ export default function ParentDashboard() {
 
         </div>
       </main>
+
+      <PremiumLockModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
     </div>
   );
 }
